@@ -1,0 +1,7 @@
+## Interface: 50400
+## Title : ChitChat
+## Notes: ChitChat, your new personal message handler.
+## Author: ItBones
+ChitChat.xml
+ChitChat.lua
+Frame.xml
