@@ -1,47 +1,93 @@
-
 Chitchat = LibStub("AceAddon-3.0"):NewAddon("Chitchat", "AceConsole-3.0","AceEvent-3.0")
 ModTestData = {}
 
 -- Minimap Icon
--- local icon = LibStub("LibDBIcon-1.0");
+local minimap = LibStub("LibDBIcon-1.0");
+
+local iconDb =
+{
+  minimap =
+	{
+		hide = false
+	}
+}
+
+
 
 function Chitchat:OnInitialize()
   -- Called when the addon is first initalized
   self:Print("OnInitialize")
-  
-  -- Load Saved DB
-  self.logs = {}
-  
+
+  -- Load saved database
+  initDatabase()
+
   -- Setup slash commands
   self:RegisterChatCommand("chitchat","CommandHandler")
-  
+
+  -- Setup minimap icon
+  initMinimap()
+
   --self:InitializeFrame()
   for i=1,25 do
     ModTestData[i] = "Player "..i
   end
 end
 
+function initDatabase()
+  self.db = LibStub("AceDB-3.0"):New("ChitchatDB",{}, "Default", "factionrealm")
+end
+
+function initMinimap()
+  self.iconDb = LibStub("AceDB-3.0"):New("ChitchatDB",iconDb, "Default", "factionrealm")
+	self.iconObject = LibStub("LibDataBroker-1.1"):NewDataObject("Chitchat", {
+		type = "data source",
+		text = L["CHITCHAT"],
+		icon = "Interface\\Icons\\INV_Misc_EngGizmos_13.blp",
+		OnClick = function (frame, button)
+			Chitchat:ToggleFrame()
+		end,
+		OnTooltipShow = function (tooltip)
+			Chitchat:OnTooltipShow(tooltip)
+		end
+	})
+
+  minimap:Register("Chitchat", self.iconObject,self.iconDb.minimap)
+end
+
 function Chitchat:OnEnable()
   -- Called when the addon is enabled, just before running
   self:Print("OnEnable")
-  
+
   -- Register Events
   self:RegisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
   self:RegisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
+  self:RegisterEvent("PLAYER_LEAVING_WORLD","OnEventLeavingWorld")
+
   -- Register Hooks
-  
+
   -- Create Frames
-  
+
   -- Finalize Addon
-  
+
   -- self:ToggleFrame()
+end
+
+function enableDatabase()
+  -- Init DB
+  self.logs = {}
+
 end
 
 function Chitchat:OnDisable()
   self:Print("OnDisable")
   -- Called when the addon is disabled
-  
+
   -- Halt mod completely, and enter standby mode.
+  WriteToDb()
+end
+
+function WriteToDb()
+  self.db = self.logs
 end
 
 
@@ -68,6 +114,15 @@ function Chitchat:GetLogs()
   return self.logs
 end
 
+-- Tooltip when over minimap icon
+function Chitchat:OnTooltipShow (tooltip)
+	tooltip:AddLine("Chitchat")
+end
+
+function Chitchat:OnEventLeavingWorld(self, ...)
+  WriteToDb()
+end
+
 -- Handle Incoming WoW Whispers
 -- 0x038000000648C5B7 as Ryknzu
 function Chitchat:OnEventWhisperIncoming(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
@@ -83,8 +138,6 @@ function Chitchat:OnEventWhisperIncoming(self, message, sender, lang, channelStr
   end
   local wEntry = Chitchat:NewWhisperEntry(guid, 1, message)
   tinsert(wLog.messages, 1, wEntry)
-  --Chitchat:Print("TODO Create & Add WhisperEntry to Log.")
-  --Chitchat:Print("LOG:"..Chitchat.logs[guid])
 end
 
 function Chitchat:OnEventWhisperOutgoing(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
@@ -109,10 +162,10 @@ end
 WhisperLog = {}
 WhisperLog.__index = WhisperLog
 
--- All WhisperLogs are stored as Chitchat.logs. Logs are an array 
+-- All WhisperLogs are stored as Chitchat.logs. Logs are an array
 function Chitchat:NewWhisperLog(uid, displayName, entryType)
   local wlog = {}
-  
+
   if type(entryType)~="string" then
     error(("NewWhisperLog: 'entryType' - string expected got '%s'."):format(type(entryType)),2)
   end
@@ -158,19 +211,19 @@ WhisperEntry.__index = WhisperEntry
 -- All entries are stored as array in a WhisperLog
 function Chitchat:NewWhisperEntry(uid, incoming, message)
   local wentry = {}
-  
+
   if uid == nil then
     error("NewWhisperEntry: 'uid' - int expected got nil.",2)
   end
-  
+
   if type(message)~="string" then
     error(("NewWhisperEntry: 'message' - string expected got '%s'."):format(type(message)),2)
   end
-  
+
   if self.logs[uid] == nil then
     error(("NewWhisperEntry: 'uid' - WhisperLog does not exist for '%s'."):format(uid),2)
   end
-  
+
   setmetatable(wentry,WhisperEntry)
   wentry.unread = 1
   wentry.incoming = incoming
@@ -280,7 +333,7 @@ end
   -- self.listScroll.update = ChitChat_UpdateMessageList;
   -- self.listScroll.scrollBar.doNotHide = true;
   -- HybridScrollFrame_CreateButtons(self.listScroll, "PlayerListButtonTemplate", 44, 0);
-  
+
   -- UIDropDownMenu_Initialize(self.playerOptionsMenu, PlayerOptionsMenu_Init, "MENU");
 
   -- -- Shows the 2nd half with all player information and messages.
@@ -292,7 +345,7 @@ end
   -- ChitChat_UpdatePlayerList();
   -- ChitChat_UpdatePlayerLoadOut();
   -- ChitChat_UpdatePlayerCard(ChitChatPlayerCard);
-  
+
   -- -- MESSAGE EVENT STUFF
   -- --self:RegisterEvent("ACHIEVEMENT_EARNED");
 
@@ -314,7 +367,7 @@ end
   -- -- TODO: PetJournal_SelectSpecies(self, targetClassId)
 -- end
 
--- -- REMOVED 
+-- -- REMOVED
 -- -- PetJournal_SelectPet(self, targetPetID)
 
 -- function ChitChatPlayerList_UpdateScrollPos(self, visibleIndex)
@@ -334,7 +387,7 @@ end
 		-- --C_PetJournal.SetSearchFilter("");
 		-- return;
 	-- end
-	
+
 	-- --C_PetJournal.SetSearchFilter(text);
 -- end
 
