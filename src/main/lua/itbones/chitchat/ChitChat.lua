@@ -4,15 +4,13 @@ ModTestData = {}
 -- Minimap Icon
 local minimap = LibStub("LibDBIcon-1.0");
 
-local iconDb =
-{
-  minimap =
-  {
-    hide = false
+local iconDb = {
+  profile = {
+    minimap = {
+      hide = false
+    }
   }
 }
-
-
 
 function Chitchat:OnInitialize()
   -- Called when the addon is first initalized
@@ -34,14 +32,14 @@ function Chitchat:OnInitialize()
 end
 
 function initDatabase()
-  self.db = LibStub("AceDB-3.0"):New("ChitchatDB",{}, "Default", "factionrealm")
+  Chitchat.logs = {} --LibStub("AceDB-3.0"):New("ChitchatDB",{}, "Default", "factionrealm")
 end
 
 function initMinimap()
-  self.iconDb = LibStub("AceDB-3.0"):New("ChitchatDB",iconDb, "Default", "factionrealm")
-  self.iconObject = LibStub("LibDataBroker-1.1"):NewDataObject("Chitchat", {
+  Chitchat.iconDb = LibStub("AceDB-3.0"):New("Chitchat",iconDb, "Default", "factionrealm")
+  Chitchat.iconObject = LibStub("LibDataBroker-1.1"):NewDataObject("Chitchat", {
     type = "data source",
-    text = L["CHITCHAT"],
+    text = "CHITCHAT",
     icon = "Interface\\Icons\\INV_Misc_EngGizmos_13.blp",
     OnClick = function (frame, button)
       Chitchat:ToggleFrame()
@@ -51,7 +49,7 @@ function initMinimap()
     end
   })
 
-  minimap:Register("Chitchat", self.iconObject,self.iconDb.minimap)
+  minimap:Register("Chitchat", Chitchat.iconObject,Chitchat.iconDb.minimap)
 end
 
 function Chitchat:OnEnable()
@@ -61,7 +59,7 @@ function Chitchat:OnEnable()
   -- Register Events
   self:RegisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
   self:RegisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
-  self:RegisterEvent("PLAYER_LEAVING_WORLD","OnEventLeavingWorld")
+  -- self:RegisterEvent("PLAYER_LEAVING_WORLD","OnEventLeavingWorld")
 
   -- Register Hooks
 
@@ -75,7 +73,6 @@ end
 function enableDatabase()
   -- Init DB
   self.logs = {}
-
 end
 
 function Chitchat:OnDisable()
@@ -83,7 +80,7 @@ function Chitchat:OnDisable()
   -- Called when the addon is disabled
 
   -- Halt mod completely, and enter standby mode.
-  WriteToDb()
+  --WriteToDb()
 end
 
 function WriteToDb()
