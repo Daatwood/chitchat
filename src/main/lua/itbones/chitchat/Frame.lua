@@ -3,6 +3,9 @@
 function Chitchat:OnLoadFrame(frame)
   Chitchat:Print("OnLoadFrame")
   Chitchat.contacts = {}
+  for line=1,10 do
+    getglobal("ChitchatFrameEntry"..line):SetID(line)
+  end
 end
 
 -- Called when any frame under parent frame is shown.
@@ -10,6 +13,7 @@ function Chitchat:OnShowFrame(frame)
   Chitchat:Print("OnShowFrame")
   ChitchatFrameScrollBar:Show()
   
+  -- TODO Load saved contacts and add missing entries
   Chitchat.contacts = Chitchat_CreateContacts()
 end
 
@@ -22,10 +26,17 @@ end
 -- CAlled when any entry button is clicked
 function Chitchat:OnClickEntry(self, button, down)
   if button == "LeftButton" then
-    PlaySound("igMainMenuOptionCheckBoxOn");
-    -- TODO Select Player Entry pass 
+    PlaySound("igMainMenuOptionCheckBoxOn")
+    local lineplusoffset = self:GetID() + FauxScrollFrame_GetOffset(ChitchatFrameScrollBar);
+    local contact = Chitchat.contacts[lineplusoffset]
+    if contact ~= nil then
+      Chitchat:Print("TODO show whispers from "..contact:GetLabel()..", tag: "..contact:GetTag())
+    else
+      Chitchat:Print("UHOH no contact found ID:"..self:GetID())
+    end
+  elseif button == "RightButton" then
+    -- TODO Show right-click menu
   end
-  Chitchat:Print("OnClickEntry: "..button.." as "..self:GetText());
 end
 
 function Chitchat_OnScrollUpdate()
@@ -36,8 +47,8 @@ function Chitchat_OnScrollUpdate()
   for line=1,10 do
     lineplusoffset = line + FauxScrollFrame_GetOffset(ChitchatFrameScrollBar);
     if lineplusoffset <= table.maxn(Chitchat.contacts) then
-      local contact = Chitchat.contacts[lineplusoffset] 
-      local display = "Empty"
+      local contact = Chitchat.contacts[lineplusoffset]
+      local display = "Unknown Player"
       if contact ~= nil then
         display = contact:GetLabel()
       end
@@ -62,7 +73,7 @@ function Chitchat_CreateContacts()
       i = i + 1
     end
   end
-  Chitchat:Print("Created "..i.." contacts")
+  Chitchat:Print("Created "..(i-1).." contacts")
   return list
 end
 
@@ -89,6 +100,16 @@ function Chitchat:NewContact(tag)
   tinsert(contact.tags, tag)
   
   return contact
+end
+
+function Contact:GetTag()
+  local tag = self.tags[1]
+  
+  if tag == nil or tag == "" then
+    error(("GetDisplayName: 'tag' - is empty or does not exist '%s'."):format(tag),2)
+  end
+  
+  return tag
 end
 
 function Contact:GetLabel()

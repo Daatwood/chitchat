@@ -27,6 +27,7 @@ function Chitchat:OnEnable()
   
   -- Register Events
   self:RegisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
+  self:RegisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
   -- Register Hooks
   
   -- Create Frames
@@ -70,6 +71,10 @@ end
 -- Handle Incoming WoW Whispers
 -- 0x038000000648C5B7 as Ryknzu
 function Chitchat:OnEventWhisperIncoming(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
+  -- Testing purpose
+  --rnd = math.random(10000,99999)
+  --guid = "9x099000000"..rnd
+  
   Chitchat:Print("Incoming Message "..message.." from "..sender.." with guid "..guid)
   -- Verify/Create WhisperEntry for Player
   local wLog = Chitchat.logs[guid]
@@ -80,6 +85,18 @@ function Chitchat:OnEventWhisperIncoming(self, message, sender, lang, channelStr
   tinsert(wLog.messages, 1, wEntry)
   --Chitchat:Print("TODO Create & Add WhisperEntry to Log.")
   --Chitchat:Print("LOG:"..Chitchat.logs[guid])
+end
+
+function Chitchat:OnEventWhisperOutgoing(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
+  Chitchat:Print("Outgoing Message "..message.." to "..sender.." with guid "..guid)
+    -- Verify/Create WhisperEntry for Player
+  local wLog = Chitchat.logs[guid]
+  if wLog == nil then
+    wLog = Chitchat:NewWhisperLog(guid, sender, "WOW")
+  end
+  -- Create Entry as Outgoing
+  local wEntry = Chitchat:NewWhisperEntry(guid, 0, message)
+  tinsert(wLog.messages, 1, wEntry)
 end
 
 -- WHISPER_LOG # is a single log confined by a button, each contains a date which is followed by an array of whispers
