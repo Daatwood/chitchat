@@ -62,18 +62,20 @@ end
 
 function Chitchat_CreateContacts()
   local list = {}
-  local i = 1
-  for k,v in pairs(Chitchat.logs) do
-    Chitchat:Print(i.."] k="..k..", v="..type(v))
-    if type(k) == "string" then
-      list[i] = Chitchat:NewContact(k)
-      local label = Chitchat:GetLogs()[k]:GetDisplayName()
-      Chitchat:Print("Created Contact at "..i.." attached to tag "..k.." displayed as "..label)
-      getglobal("ChitchatFrameEntry"..i):SetText(label);
-      i = i + 1
+  if Chitchat.logs ~= nil then
+    local i = 1
+    for k,v in pairs(Chitchat.logs) do
+      Chitchat:Print(i.."] k="..k..", v="..type(v))
+      if type(k) == "string" then
+        list[i] = Chitchat:NewContact(k)
+        local label = Chitchat:GetLogs()[k]:GetDisplayName()
+        Chitchat:Print("Created Contact at "..i.." attached to tag "..k.." displayed as "..label)
+        getglobal("ChitchatFrameEntry"..i):SetText(label);
+        i = i + 1
+      end
     end
+    Chitchat:Print("Created "..(i-1).." contacts")
   end
-  Chitchat:Print("Created "..(i-1).." contacts")
   return list
 end
 
