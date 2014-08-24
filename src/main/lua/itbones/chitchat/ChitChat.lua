@@ -7,9 +7,9 @@ local minimap = LibStub("LibDBIcon-1.0");
 local iconDb =
 {
   minimap =
-	{
-		hide = false
-	}
+  {
+    hide = false
+  }
 }
 
 
@@ -39,17 +39,17 @@ end
 
 function initMinimap()
   self.iconDb = LibStub("AceDB-3.0"):New("ChitchatDB",iconDb, "Default", "factionrealm")
-	self.iconObject = LibStub("LibDataBroker-1.1"):NewDataObject("Chitchat", {
-		type = "data source",
-		text = L["CHITCHAT"],
-		icon = "Interface\\Icons\\INV_Misc_EngGizmos_13.blp",
-		OnClick = function (frame, button)
-			Chitchat:ToggleFrame()
-		end,
-		OnTooltipShow = function (tooltip)
-			Chitchat:OnTooltipShow(tooltip)
-		end
-	})
+  self.iconObject = LibStub("LibDataBroker-1.1"):NewDataObject("Chitchat", {
+    type = "data source",
+    text = L["CHITCHAT"],
+    icon = "Interface\\Icons\\INV_Misc_EngGizmos_13.blp",
+    OnClick = function (frame, button)
+      Chitchat:ToggleFrame()
+    end,
+    OnTooltipShow = function (tooltip)
+      Chitchat:OnTooltipShow(tooltip)
+    end
+  })
 
   minimap:Register("Chitchat", self.iconObject,self.iconDb.minimap)
 end
@@ -116,7 +116,7 @@ end
 
 -- Tooltip when over minimap icon
 function Chitchat:OnTooltipShow (tooltip)
-	tooltip:AddLine("Chitchat")
+  tooltip:AddLine("Chitchat")
 end
 
 function Chitchat:OnEventLeavingWorld(self, ...)
@@ -382,13 +382,13 @@ end
 -- end
 
 -- function ChitChat_OnSearchTextChanged(self)
-	-- local text = self:GetText();
-	-- if text == SEARCH then
-		-- --C_PetJournal.SetSearchFilter("");
-		-- return;
-	-- end
+  -- local text = self:GetText();
+  -- if text == SEARCH then
+    -- --C_PetJournal.SetSearchFilter("");
+    -- return;
+  -- end
 
-	-- --C_PetJournal.SetSearchFilter(text);
+  -- --C_PetJournal.SetSearchFilter(text);
 -- end
 
 -- function ChitChatListItem_OnClick(self, button)
@@ -415,13 +415,13 @@ end
 -- end
 
 -- function ChitChatUnreadCount_OnEnter(self)
-	-- GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
-	-- GameTooltip:SetMinimumWidth(150);
-	-- GameTooltip:SetText("CHITCHAT_TOTAL_UNREAD_COUNT", 1, 1, 1);
-	-- GameTooltip:AddLine("CHITCHAT_TOTAL_UNREAD_COUNT_TOOLTIP", nil, nil, nil, true);
-	-- GameTooltip:Show();
+  -- GameTooltip:SetOwner(self, "ANCHOR_RIGHT");
+  -- GameTooltip:SetMinimumWidth(150);
+  -- GameTooltip:SetText("CHITCHAT_TOTAL_UNREAD_COUNT", 1, 1, 1);
+  -- GameTooltip:AddLine("CHITCHAT_TOTAL_UNREAD_COUNT_TOOLTIP", nil, nil, nil, true);
+  -- GameTooltip:Show();
 -- end
 
 -- function ChitChatFilterDropDown_OnLoad(self)
-	-- UIDropDownMenu_Initialize(self, ChitChatFilterDropDown_Initialize, "MENU");
+  -- UIDropDownMenu_Initialize(self, ChitChatFilterDropDown_Initialize, "MENU");
 -- end
