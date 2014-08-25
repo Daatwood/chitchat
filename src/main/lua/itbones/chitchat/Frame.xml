@@ -57,7 +57,7 @@
       
       <Frame parentKey="RightInset" useParentLevel="true" inherits="InsetFrameTemplate">
         <Anchors>
-          <Anchor point="TOPRIGHT" x="-6" y="-60" />
+          <Anchor point="TOPRIGHT" x="-30" y="-60" />
           <Anchor point="BOTTOMLEFT" relativeKey="$parent.LeftInset" relativePoint="BOTTOMRIGHT" x="20" y="0"/>
         </Anchors>
       </Frame>
@@ -97,13 +97,13 @@
       
       <ScrollFrame name="ChitchatNoteScrollFrame" inherits="UIPanelScrollFrameTemplate">
         <Anchors>
-          <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="0" y="-28"/>
+          <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="4" y="0"/>
           <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="0"/>
         </Anchors>
         <ScrollChild>
           <SimpleHTML name="ChitchatNote" >
             <Size>
-              <AbsDimension x="280" y="10"/>
+              <AbsDimension x="380" y="10"/>
             </Size>
             <Scripts>
               <!--OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
