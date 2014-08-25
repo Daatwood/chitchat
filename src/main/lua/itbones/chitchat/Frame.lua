@@ -38,18 +38,43 @@ function Chitchat:OnClickEntry(self, button, down)
   end
 end
 
+-- Single Whisper Format
+-- (similar to facebook chat)
+-----------------------------
+-- <h1>Player Name</h1>
+-- <p align='right'>1/14 10:36pm</p>
+-- <p>a message from the player</p>
 function Chitchat:ShowWhispers(contact)
-  local text = ""
+  local text = "<html><body>"
+  local message = ""
   local whisper = nil
+  local color = ""
+  local alignment = ""
   if contact ~= nil then
     for index, value in ipairs(contact:GetWhispers()) do
       whisper = Chitchat:GetWhispers()[value]
       if whisper ~= nil then
-        text = text.."\n"..whisper:GetTimestamp()..": "..whisper:GetMessage()
+        if whisper:IsIncoming() then
+          color = "ffDA81F5"
+          alignment = "left"
+          message = "<p align='"..alignment.."'>"..contact:GetLabel().."</p>"
+        else
+          color = "ffffffff"
+          alignment = "right"
+          message = "<p align='"..alignment.."'>"..UnitName("player").."</p>"
+        end
+        -- message = message.."<img src='Interface\Icons\Ability_Ambush' width='32' height='32' align='left'/>"
+        message = message.."<p align='"..alignment.."'>|cFFA9A9A9["..FormatTimestamp(whisper:GetTimestamp()).."]|r</p>"
+        message = message.."<p align='"..alignment.."'>|c"..color..""..whisper:GetMessage().."|r</p>"
+        text = text.."<br/>"..message
       end
     end
   end
-  ChitchatNote:SetText(text)
+  ChitchatNote:SetText(text.."<br/><br/></body></html>")
+end
+
+function FormatTimestamp(timestamp)
+  return date("%m/%d/%y %H:%M:%S", timestamp)
 end
 
 function Chitchat_OnScrollUpdate()

@@ -115,8 +115,8 @@ end
 function Chitchat:FakeWhisper(incoming)
   local rnd = math.random(10000,99999)
   local guid = "9x099000000"..rnd
-  local sender = "T"..rnd
-  local message = "Lorem ipsum dolor sit amet."
+  local sender = "P"..rnd.."-Server"..rnd
+  local message = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ultricies nisi ligula, ac finibus nulla aliquet et. Suspendisse porttitor consectetur massa, ac ultrices eros ultricies quis. Nullam in magna luctus, rutrum ligula sit amet."
   Chitchat:HandleWhisper(guid, sender, message, time(), incoming)
 end
 -- Handle Incoming WoW Whispers
