@@ -12,23 +12,37 @@
     <Size>
       <AbsDimension x="244" y="46" />
     </Size>
-    <NormalFont style="GameFontHighlightLeft"/>
+    <!--NormalFont style="GameFontHighlightLeft"/-->
     <Layers>
       <Layer level="BACKGROUND">
         <Texture file="Interface\PetBattles\PetJournal">
           <TexCoords left="0.49804688" right="0.90625000" top="0.12792969" bottom="0.17285156"/>  
         </Texture>
       </Layer>
+      <Layer level="ARTWORK">
+        <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT" parentKey="name" >
+          <Size x="200" y="25"/>
+          <Anchors>
+            <Anchor point="CENTER">
+              <Offset>
+                <AbsDimension x="0" y="0"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </FontString>
+      </Layer>
+      
     </Layers>
     <Scripts>
       <OnClick>Chitchat:OnClickEntry(self,button,down)</OnClick>
+      <OnLoad>self:RegisterForClicks("LeftButtonUp", "RightButtonUp")</OnLoad>
     </Scripts>
   </Button>
 
   <!-- Answering Machine frame -->
   <Frame name="ChitchatFrame" toplevel="true" movable="true" parent="UIParent" enableMouse="true" hidden="true">
     <Size> 
-      <AbsDimension x="703" y="606"/> 
+      <AbsDimension x="708" y="606"/> 
     </Size> 
     <Anchors>
       <Anchor point="TOPLEFT">
@@ -50,8 +64,8 @@
       <Frame parentKey="LeftInset" useParentLevel="true" inherits="InsetFrameTemplate">
         <Size x="260" y="496"/>
         <Anchors>
-          <Anchor point="TOPLEFT" x="4" y="-60" />
-          <Anchor point="BOTTOMLEFT" x="4" y="26" />
+          <Anchor point="TOPLEFT" x="12" y="-60" />
+          <Anchor point="BOTTOMLEFT" x="4" y="46" />
         </Anchors>
       </Frame>
       
@@ -85,16 +99,7 @@
           </OnShow>
         </Scripts>
       </ScrollFrame>
-      
-      <!--ScrollFrame name="ChitchatFrameNote" inherits="FauxScrollFrameTemplate" hidden="false">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="0" y="-28"/>
-          <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="0"/>
-        </Anchors>
-        <Scripts>
-        </Scripts>
-      </ScrollFrame-->
-      
+
       <ScrollFrame name="ChitchatNoteScrollFrame" inherits="UIPanelScrollFrameTemplate">
         <Anchors>
           <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="4" y="0"/>
@@ -103,17 +108,54 @@
         <ScrollChild>
           <SimpleHTML name="ChitchatNote" >
             <Size>
-              <AbsDimension x="380" y="10"/>
+              <AbsDimension x="378" y="10"/>
             </Size>
             <Scripts>
-              <!--OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
-              <OnHyperlinkClick>ChatFrame_OnHyperlinkShow(self, link, text, button)</OnHyperlinkClick-->
+              <OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
+              <!--OnHyperlinkClick>ChatFrame_OnHyperlinkShow(self, link, text, button)</OnHyperlinkClick-->
             </Scripts>
             <FontString inherits="GameFontHighlightSmall" /> 
             <FontStringHeader1 inherits="ChitchatFontHeader"/>
           </SimpleHTML>
         </ScrollChild>
       </ScrollFrame>
+      
+<!--       <EditBox name="$parentEditBox" letters="80">
+        <Size x="378" y="32" />
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="4" y="-500"/>
+            <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="90"/>
+          </Anchors>
+        <Layers>
+          <Layer level="BACKGROUND">
+            <Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
+              <Size x="75" y="32" />
+              <Anchors>
+                <Anchor point="LEFT">
+                  <Offset x="-10" y="0" />
+                </Anchor>
+              </Anchors>
+              <TexCoords left="0" right="0.2" top="0" bottom="1.0"/>
+            </Texture>
+            <Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
+                <Size x="75" y="32" />
+                <Anchors>
+                    <Anchor point="RIGHT">
+                        <Offset x="10" y="0" />
+                    </Anchor>
+                </Anchors>
+                <TexCoords left="0.7" right="1.0" top="0" bottom="1.0"/>
+            </Texture>
+          </Layer>
+        </Layers>
+        <Scripts>
+          <OnLoad>
+            self:ClearFocus();
+          </OnLoad>
+        </Scripts>
+        <FontString inherits="ChatFontNormal" />
+      </EditBox> -->
+
 
       <Button name="ChitchatFrameEntry1" inherits="ChitchatFrameEntryTemplate">
         <Anchors>
@@ -169,7 +211,19 @@
           <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry9" relativePoint="BOTTOMLEFT"/>
         </Anchors>
       </Button>
-      
+      <!--Frame name="ChitchatLogMenu" inherits="UIDropDownMenuTemplate" enableMouse="true" parentKey="logMenu"/-->
+      <Frame name="ChitchatDropDown" inherits="UIDropDownMenuTemplate" id="1" hidden="true">
+        <Size>
+          <AbsDimension x="10" y="10"/>
+        </Size>
+        <Anchors>
+          <Anchor point="TOP">
+            <Offset>
+              <AbsDimension x="10" y="-60"/>
+            </Offset>
+          </Anchor>
+        </Anchors>
+      </Frame>
     </Frames>
     
     <Layers>
@@ -198,9 +252,24 @@
       </Layer>
     </Layers>
     <Scripts>
-      <OnLoad>Chitchat:OnLoadFrame(self)</OnLoad>
+      <OnLoad>
+        Chitchat:OnLoadFrame(self)
+        tinsert(UISpecialFrames, self:GetName());
+      </OnLoad>
       <OnShow>Chitchat:OnShowFrame(self)</OnShow>
       <OnHide>Chitchat:OnHideFrame(self)</OnHide>
+      <OnMouseDown>
+        if button == "LeftButton" and not self.isMoving then
+          self:StartMoving();
+          self.isMoving = true;
+        end
+      </OnMouseDown>
+      <OnMouseUp>
+        if button == "LeftButton" and self.isMoving then
+          self:StopMovingOrSizing();
+          self.isMoving = false;
+        end
+      </OnMouseUp>
     </Scripts>
    </Frame>
 </Ui>

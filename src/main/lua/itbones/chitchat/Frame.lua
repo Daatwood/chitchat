@@ -1,7 +1,14 @@
+-- TODO
+--  Right-clicking on conversations and on messages.
+
 function Chitchat:OnLoadFrame(frame)
   Chitchat:Print("OnLoadFrame")
-  
   initFrame()
+  local showmenu;
+	UIDropDownMenu_Initialize(ChitchatDropDown, Chitchat_InitializeLogOptionsMenu, "MENU");
+	-- showmenu = function()
+		-- ToggleDropDownMenu(1, nil, ChitchatDropDown, ChitchatFrameEntry1, 120, 10);
+	-- end
 end
 
 function initFrame()
@@ -10,33 +17,59 @@ function initFrame()
   end
 end
 
+ function Chitchat_InitializeLogOptionsMenu()
+  local info = UIDropDownMenu_CreateInfo()
+  info.text = "Rename Log"
+  info.notCheckable = true
+  UIDropDownMenu_AddButton(info)
+  
+  info.text = "Merge with..."
+  UIDropDownMenu_AddButton(info)
+  
+  info.text = "Delete Log"
+  UIDropDownMenu_AddButton(info)
+  
+  info.text = "Cancel"
+  UIDropDownMenu_AddButton(info)
+end
+
 -- Called when any frame under parent frame is shown.
 function Chitchat:OnShowFrame(frame)
-  Chitchat:Print("OnShowFrame")
+  PlaySound("igCharacterInfoOpen")
   ChitchatFrameScrollBar:Show()
 end
 
 -- Called when any frame under parent frame is hidden.
 function Chitchat:OnHideFrame(frame)
-  Chitchat:Print("OnHideFrame")
+  PlaySound("igCharacterInfoClose")
 end
 
 -- CAlled when any entry button is clicked
 function Chitchat:OnClickEntry(self, button, down)
+  Chitchat:Print("click: "..button)
   if button == "LeftButton" then
     PlaySound("igMainMenuOptionCheckBoxOn")
     local lineplusoffset = self:GetID() + FauxScrollFrame_GetOffset(ChitchatFrameScrollBar);
-    local contact = Chitchat:GetLogs()[lineplusoffset]
-    Chitchat:ShowWhispers(contact)
-    --if contact ~= nil then
-    --  Chitchat:Print("TODO show whispers from "..contact:GetLabel()..", tag: "..contact:GetTag())
-    --else
-    --  Chitchat:Print("UHOH no contact found ID:"..self:GetID())
-    --end
+    local conversation = Chitchat:GetLogs()[lineplusoffset]
+    Chitchat:ShowWhispers(conversation)
   elseif button == "RightButton" then
+    --Chitchat:Print("Test")
+    Chitchat.menuLogID = lineplusoffset
+    ToggleDropDownMenu(1, nil, ChitchatDropDown, getglobal("ChitchatFrameEntry"..self:GetID()), 120, 10);
+    --menuFrame = CreateFrame("Frame", "ExampleMenuFrame", getglobal("ChitchatFrameEntry1"..self:GetID()), "UIDropDownMenuTemplate")
+    --EasyMenu(menu, menuFrame, menuFrame, 0 , 0, "MENU");
     -- TODO Show right-click menu
+    --Chitchat_ShowLogOptionsMenu(lineplusoffset, self, 0, 0);
   end
 end
+
+-- function Chitchat_ShowLogOptionsMenu(index, anchorTo, offsetX, offsetY)
+  -- if (index) then
+    -- Chitchat.menuLogID = Chitchat:GetLogs()[index]
+    -- return;
+  -- end
+  -- ToggleDropDownMenu(1, nil, ChitchatLogOptionsMenu, anchorTo, offsetX, offsetY);
+-- end
 
 -- Single Whisper Format
 -- (similar to facebook chat)
@@ -44,29 +77,43 @@ end
 -- <h1>Player Name</h1>
 -- <p align='right'>1/14 10:36pm</p>
 -- <p>a message from the player</p>
-function Chitchat:ShowWhispers(contact)
+-- 
+-- Should actually be similar to WoW Chat. 
+-- [Time][Player]: Message...
+function Chitchat:ShowWhispers(conversation)
+  ChitchatNote:SetFont("Fonts\\FRIZQT__.TTF", 12)
   local text = "<html><body>"
   local message = ""
   local whisper = nil
   local color = ""
   local alignment = ""
-  if contact ~= nil then
-    for index, value in ipairs(contact:GetWhispers()) do
+  local currentDate
+  local displayDate = ""
+  if conversation ~= nil then
+    for index, value in ipairs(conversation:GetWhispers()) do
       whisper = Chitchat:GetWhispers()[value]
       if whisper ~= nil then
         if whisper:IsIncoming() then
           color = "ffDA81F5"
           alignment = "left"
-          message = "<p align='"..alignment.."'>"..contact:GetLabel().."</p>"
         else
           color = "ffffffff"
           alignment = "right"
-          message = "<p align='"..alignment.."'>"..UnitName("player").."</p>"
         end
+        currentDate = FormatDate(whisper:GetTimestamp())
+        if displayDate ~= currentDate then
+          displayDate = currentDate
+          message = "<br/><p align='center'>"..displayDate.."</p>"
+        end
+        
+        message = message.."<p>|cFFA9A9A9["..FormatTime(whisper:GetTimestamp()).."]|r|c"..color.."["..whisper:GetSender().."]: "..whisper:GetMessage().."|r</p>"
+        
+        --message = "<p align='"..alignment.."'>"..sender.."</p>"
         -- message = message.."<img src='Interface\Icons\Ability_Ambush' width='32' height='32' align='left'/>"
-        message = message.."<p align='"..alignment.."'>|cFFA9A9A9["..FormatTimestamp(whisper:GetTimestamp()).."]|r</p>"
-        message = message.."<p align='"..alignment.."'>|c"..color..""..whisper:GetMessage().."|r</p>"
-        text = text.."<br/>"..message
+        --message = message.."<p align='"..alignment.."'>|cFFA9A9A9["..FormatTimestamp(whisper:GetTimestamp()).."]|r</p>"
+        --message = message.."<p align='"..alignment.."'>|c"..color..""..whisper:GetMessage().."|r</p>"
+        text = text..""..message
+        message = ""
       end
     end
   end
@@ -76,110 +123,36 @@ end
 function FormatTimestamp(timestamp)
   return date("%m/%d/%y %H:%M:%S", timestamp)
 end
+function FormatTime(timestamp)
+  return date("%H:%M:%S", timestamp)
+end
+function FormatDate(timestamp)
+  return date("%m/%d/%y", timestamp)
+end
+
 
 function Chitchat_OnScrollUpdate()
   local line; -- 1 through 5 of our window to scroll
   local lineplusoffset; -- an index into our data calculated from the scroll offset
-  -- 100 is max entries, 10 is # of lines, 16 is pixel height
-  FauxScrollFrame_Update(ChitchatFrameScrollBar,100,10,16);
+  -- 100 is max entries, 10 is # of lines, 46 is pixel height
+  local entries = table.maxn(Chitchat:GetLogs())
+  FauxScrollFrame_Update(ChitchatFrameScrollBar,entries,10,46);
   for line=1,10 do
     lineplusoffset = line + FauxScrollFrame_GetOffset(ChitchatFrameScrollBar);
-    if lineplusoffset <= table.maxn(Chitchat:GetLogs()) then
-      local contact = Chitchat:GetLogs()[lineplusoffset]
-      local display = "Unknown Player"
-      if contact ~= nil then
-        display = contact:GetLabel()
+    button = getglobal("ChitchatFrameEntry"..line)
+    if lineplusoffset <= entries then
+      local conversation = Chitchat:GetLogs()[lineplusoffset]
+      local display = "Missing Label"
+      if conversation ~= nil then
+        display = conversation:GetLabel()
       end
-      getglobal("ChitchatFrameEntry"..line):SetText(display);
-      getglobal("ChitchatFrameEntry"..line):Show();
+      button.name:SetText(display)
+      --getglobal("ChitchatFrameEntry"..line):SetText(display);
+      button:Show()
+      --getglobal("ChitchatFrameEntry"..line):Show();
     else
-      getglobal("ChitchatFrameEntry"..line):Hide();
+      button:Hide()
+      --getglobal("ChitchatFrameEntry"..line):Hide();
     end
   end
 end
-
--- function Chitchat_CreateContacts()
-  -- local list = {}
-  -- if Chitchat.logs ~= nil then
-    -- local i = 1
-    -- for k,v in pairs(Chitchat.logs) do
-      -- Chitchat:Print(i.."] k="..k..", v="..type(v))
-      -- if type(k) == "string" then
-        -- list[i] = Chitchat:NewContact(k)
-        -- local label = Chitchat:GetLogs()[k]:GetDisplayName()
-        -- Chitchat:Print("Created Contact at "..i.." attached to tag "..k.." displayed as "..label)
-        -- getglobal("ChitchatFrameEntry"..i):SetText(label);
-        -- i = i + 1
-      -- end
-    -- end
-    -- Chitchat:Print("Created "..(i-1).." contacts")
-  -- end
-  -- return list
--- end
-
--- function Chitchat_CreateContact(tag)
-  -- tinsert(Chitchat.contacts, Chitchat:NewContact(tag)
--- end
-
--- Contact = {}
--- Contact.__index = Contact
--- function Chitchat:NewContact(tag)
-  -- local contact = {}
-  
-  -- -- if type(tag)~="string" then
-    -- -- error(("NewContact: 'tag' - string expected got '%s'."):format(type(tag)),2)
-  -- -- end
-  
-  -- if Chitchat.logs[tag] == nil then
-    -- error(("NewContact: 'tag' - WhisperLog does not exist for '%s'."):format(tag),2)
-  -- end
-  
-  -- setmetatable(contact,Contact)
-  -- contact.tags = {}
-  -- contact.label = Chitchat:GetLogs()[tag]:GetDisplayName()
-  -- tinsert(contact.tags, tag)
-  
-  -- return contact
--- end
-
--- function Contact:GetTag()
-  -- local tag = self.tags[1]
-  
-  -- if tag == nil or tag == "" then
-    -- error(("GetDisplayName: 'tag' - is empty or does not exist '%s'."):format(tag),2)
-  -- end
-  
-  -- return tag
--- end
-
--- function Contact:GetWhispers()
-  -- local tag = self.tags[1]
-  
-  -- if tag == nil or tag == "" then
-    -- error(("GetWhispers: 'tag' - is empty or does not exist '%s'."):format(tag),2)
-  -- end
-  
-  -- if Chitchat.logs[tag] == nil then
-    -- error(("GetWhispers: 'uid' - WhisperLog does not exist for '%s'."):format(uid),2)
-  -- end
-
-  -- return Chitchat.logs[tag]:GetMessages()
--- end
-
--- function Contact:GetLabel()
-  -- local tag = self.tags[1]
-  
-  -- if tag == nil or tag == "" then
-    -- error(("GetDisplayName: 'tag' - is empty or does not exist '%s'."):format(tag),2)
-  -- end
-  
-  -- if self.label then
-    -- return self.label
-  -- end
-  
-  -- if Chitchat.logs[tag] == nil then
-    -- error(("GetDisplayName: 'uid' - WhisperLog does not exist for '%s'."):format(uid),2)
-  -- end
-
-  -- return Chitchat.logs[tag]:GetDisplayName()
--- end

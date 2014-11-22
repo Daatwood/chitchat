@@ -2,6 +2,9 @@
 ## Title : ChitChat
 ## Notes: ChitChat, your new personal message handler.
 ## Author: ItBones
+## SavedVariables: ChitchatDB
+## X-Category: Interface Enhancements
+
 ChitChat.xml
 ChitChat.lua
 Frame.xml
