@@ -1,0 +1,37 @@
+Chitchat::HaveWeMet - Tracks players(note & rating)
+
+Chitchat - Records and manages messages from players.
+
+Chitchat Goal:
+Record whispers from players.
+
+WhisperLog
+String tag - unique link to a player
+Boolean unread - determines if there are new enties
+Integer[] whispers - an array of WhisperEntry ids
+Integer id - WhisperLog unique id
+
+MessageEntry
+String tag - unique link to a player
+String message - contents of the whisper
+String timestamp - time and date of the message
+Boolean incoming - determines if the message was sent or received
+Integer id - WhisperEntry unique id
+
+PlayerNote
+String tag - unique link to a player
+String note - User added notes of a player.
+Integer rating - User added rating
+String class - User added player class
+Integer roles - User added roles(Healer,Dps,Tank)7-THD, 6-TH, 5-TD, 4-T, 3-HD, 2-H, 1-D
+Integer id - PlayerNote unique id
+
+-- Virtual Table, Generated in Chitchat
+Tags
+Key[String Tag] - unique link to a player
+Value{WHISPER_LOG: whisper_log_id, PLAYER_NOTE: player_note_id} - a table with first value linking to whisperlog and second linking to playerNote
+
+
+WhispersLog can be set to not be persistent and only exists in sessions.
+WhisperEntry can be auto removed after X Days or Weeks.
+PlayerNote can be set to not be auto generated 

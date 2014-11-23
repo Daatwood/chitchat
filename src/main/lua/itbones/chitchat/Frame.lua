@@ -19,12 +19,10 @@ end
 
  function Chitchat_InitializeLogOptionsMenu()
   local info = UIDropDownMenu_CreateInfo()
-  info.text = "Rename Log"
   info.notCheckable = true
-  UIDropDownMenu_AddButton(info)
   
-  info.text = "Merge with..."
-  UIDropDownMenu_AddButton(info)
+  -- info.text = "Rename Log"
+  -- UIDropDownMenu_AddButton(info)
   
   info.text = "Delete Log"
   UIDropDownMenu_AddButton(info)
@@ -90,8 +88,8 @@ function Chitchat:ShowWhispers(conversation)
   local currentDate
   local displayDate = ""
   if conversation ~= nil then
-    for index, value in ipairs(conversation:GetWhispers()) do
-      whisper = Chitchat:GetWhispers()[value]
+    for index, value in ipairs(conversation:GetMessages()) do
+      whisper = Chitchat:GetMessages()[value]
       if whisper ~= nil then
         if whisper:IsIncoming() then
           color = "ffDA81F5"
@@ -144,7 +142,7 @@ function Chitchat_OnScrollUpdate()
       local conversation = Chitchat:GetLogs()[lineplusoffset]
       local display = "Missing Label"
       if conversation ~= nil then
-        display = conversation:GetLabel()
+        display = conversation["tag"]
       end
       button.name:SetText(display)
       --getglobal("ChitchatFrameEntry"..line):SetText(display);
