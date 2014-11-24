@@ -1,20 +1,49 @@
--- Usage:
--- FindOrCreateWhisperLog -- Returns whisper_log object
--- FindWhisperLog -- Returns whisper_log id
--- CreateWhisperLog -- Returns whisper_log id
-
-WhisperLog = {}
-WhisperLog.__index = WhisperLog
+function Chitchat:GetLogs()
+  return self.logs
+end
+function Chitchat:GetLog(tag)
+  return self.logs[tag]
+end
+function Chitchat:AddLog(tag, whisper_log)
+  if self.logs == nil then self.logs = {} end
+  if whisper_log == nil then
+    error(("AddLog: 'whisper_log' - table expected got '%s'."):format(type(whisper_log)),2)
+  end
+  self.logs[tag] = whisper_log
+  return self.logs[tag]
+end
 
 -- Locates Log for guid or creates it if does not already exist
 function Chitchat:FindOrCreateWhisperLog(tag)
+  local whisper_log = Chitchat:GetLog(tag)
+  if whisper_log ~= nil then return whisper_log end
+  return self:CreateWhisperLog(tag)
+end
+
+function Chitchat:DeleteWhisperLog(tag)
   -- Retrieve log id
-  local log_id = Chitchat:FindTag(tag,"WHISPER_LOG")
-  if log_id == nil then
-    log_id = Chitchat:CreateWhisperLog(tag)
-    Chitchat:AddTag(tag, "WHISPER_LOG", log_id) -- Update the Tags to include a id to note.
+  local whisper_log = Chitchat:GetLog(tag)
+  if whisper_log ~= nil then
+    if whisper_log["tag"] == tag then
+      if whisper_log[MESSAGES_KEY] ~= nil then
+        -- Delete messages so they are not orphans
+        for index, value in ipairs(whisper_log[MESSAGES_KEY]) do
+          self.messages[tostring(value)] = nil
+        end
+        self:Debug("Deleted all recorded messages.")
+      end
+    
+      self.logs[tag] = nil
+      self:Debug("Deleted WhisperLog for "..tag)
+      self:SendMessage("CHITCHAT_LOG_DELETED", tag)
+      self:OnScrollUpdate()
+      ChitchatNote:SetText("")
+    else
+      self:Print(("DeleteWhisperLog: Unable able to delete log.'%s' != '%s'"):format(tag,whisper_log["tag"]))
+    end
+  else
+    self:Debug("Unable to locate WhisperLog ("..tag..") for deletion.")
   end
-  return Chitchat:GetLogs()[log_id]
 end
 
 -- All WhisperLogs are stored as Chitchat.logs. Logs are an array
@@ -27,41 +56,14 @@ function Chitchat:CreateWhisperLog(tag)
   if tag == "" then
     error(("CreateWhisperLog: 'tag' - empty tag not allowed."),2)
   end
-  if Chitchat:FindTag(tag,"WHISPER_LOG") ~= nil then
+  if Chitchat:GetLog(tag) ~= nil then
     error(("CreateWhisperLog: 'tag' - '%s' already exists"):format(tag),2)
   end
   
-  setmetatable(whisper_log,self)
-  tinsert(Chitchat:GetLogs(), whisper_log)
-  whisper_log.tag = tag -- Ties the log to a predictable unique string, whispers are guid pased while channels are global name based.
-  whisper_log.messages = {} -- Internal id of all whispers.
-  whisper_log.unread = 1 -- Flags log as containing new whispers
-  whisper_log.id = table.getn(Chitchat:GetLogs())
-  
-  Chitchat:Print("Created Log for "..whisper_log.tag)
-  Chitchat:SendMessage("CHITCHAT_LOG_CREATED", whisper_log.id, tag)
-  
-  return whisper_log.id
-end
-function WhisperLog:GetTag()
-  return self.tag
-end
-function WhisperLog:SetTag(newTag)
-  self.tag = newTag
-end
-function WhisperLog:GetMessages()
-  return self.messages
-end
-function WhisperLog:AddMessage(message_id)
-  tinsert(self.messages, message_id)
-  self:SetUnread()
-end
-function WhisperLog:SetUnread()
-  self.unread = 1
-end
-function WhisperLog:SetRead()
-  self.unread = 0
-end
-function WhisperLog:IsUnread()
-  return self.unread == 1
+  whisper_log[TAG_KEY] = tag
+  whisper_log[MESSAGES_KEY] = {}
+  whisper_log[UNREAD_KEY] = 0
+  self:SendMessage("CHITCHAT_MESSAGE_CREATED", whisper_log[TAG_KEY])
+  self:Debug("Created Log for "..whisper_log[TAG_KEY])
+  return self:AddLog(tag, whisper_log)
 end

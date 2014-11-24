@@ -1,13 +1,6 @@
-Chitchat = LibStub("AceAddon-3.0"):NewAddon("Chitchat", "AceConsole-3.0","AceEvent-3.0")
-local CC = Chitchat
-local ldb = LibStub:GetLibrary("LibDataBroker-1.1")
-local dataObj = ldb:NewDataObject("Rarity", {
- type = "data source",
- text = "Loading",
- label = "Chitchat",
- tocname = "Chitchat",
- icon = "Interface\\Icons\\INV_Misc_EngGizmos_13.blp"
-})
+Chitchat = LibStub("AceAddon-3.0"):NewAddon("Chitchat", "AceConsole-3.0","AceEvent-3.0", "AceHook-3.0")
+
+Chitchat.editNoteFrame = nil
 
 local defaultDB = {
   global = {
@@ -15,16 +8,42 @@ local defaultDB = {
     minimap = { hide = false }, -- Minimap Icon display
     logs = {}, -- WhisperLog
     notes = {}, -- PersonalNote
-    messages = {} -- MessageEntry
+    messages = {index = 0}, -- MessageEntry
+    menusToModify = {
+      ["PLAYER"] = true, 
+      ["TARGET"] = true,
+      ["PARTY"] = true, 
+      ["FRIEND"] = true, 
+      ["FRIEND_OFFLINE"] = true, 
+      ["RAID_PLAYER"] = true,
+    },
   }
 }
 
+INDEX_KEY = "index"
+SENDER_KEY = "sender"
+MESSAGE_KEY = "message"
+TIMESTAMP_KEY = "timestamp"
+INCOMING_KEY = "incoming"
+ID_KEY = "id"
+
+TAG_KEY = "tag"
+MESSAGES_KEY = "messages"
+UNREAD_KEY = "unread"
+
+NOTE_KEY = "note"
+RATING_KEY = "rating"
+ROLE_KEY = "role"
+CLASS_KEY = "playerclass"
+
+UnitPopupButtons["CC_EDIT_NOTE"] = {text = "Have we met?", dist = 0, func = Chitchat.EditNoteDropdown}
+
 function Chitchat:OnInitialize()
   -- Called when the addon is first initalized
-  self:Print("OnInitialize: \124TInterface\\Icons\\INV_Misc_EngGizmos_13:12\124t")
+  --self:Debug("OnInitialize: \124TInterface\\Icons\\INV_Misc_EngGizmos_13:12\124t")
   -- Setup slash commands
   self:RegisterChatCommand("chitchat","CommandHandler")
-  
+  self:RegisterChatCommand("cc","CommandHandler")
   -- Load saved database
   initDatabase()
 
@@ -36,33 +55,39 @@ end
 
 function Chitchat:OnEnable()
   -- Called when the addon is enabled, just before running
-  self:Print("OnEnable")
+  self:Debug("OnEnable")
 
   -- Register Events
   self:RegisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
   self:RegisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
   
-  self:RegisterEvent("HAVEWEMET_RECORD_ADDED","HaveWeMetTest")
-    -- HaveWeMet Events
-  --self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnEventGroupUpdate")
-  --self:RegisterEvent("PLAYER_ENTERING_WORLD","OnEventPlayerEnteringWorld")
+  --self:RegisterMessage("HAVEWEMET_RECORD_ADDED","HaveWeMetTest")
+  self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnEventGroupRosterUpdate")
 
   -- Register Hooks
-    -- HaveWeMet Hooks
+  -- HaveWeMet Hooks
+ 
+  for menu, enabled in pairs(self.db.global.menusToModify) do
+    if menu and enabled then
+      tinsert(UnitPopupMenus[menu], #UnitPopupMenus[menu], "CC_EDIT_NOTE")
+    end
+  end
+  self:SecureHook("UnitPopup_ShowMenu")
+  
   --self:HookScript(GameTooltip, "OnTooltipSetUnit")
-  --self:AddToUnitPopupMenu()
 
   -- Create Frames
+  self.editNoteFrame = self:CreateEditNoteFrame()
 
   -- Finalize Addon
 end
 
-function Chitchat:HaveWeMetTest()
-  Chitchat:Print("HaveWeMetTest!")
+function Chitchat:Debug(s, ...)
+	if self.db.global.silent then self:Print(format("[Debug] "..s, ...)) end
 end
 
 function Chitchat:OnDisable()
-  self:Print("OnDisable")
+  self:Debug("OnDisable")
   -- Called when the addon is disabled
 
   -- Halt mod completely, and enter standby mode.
@@ -72,13 +97,13 @@ end
 
 function initDatabase()
   Chitchat.db = LibStub("AceDB-3.0"):New("ChitchatDB",defaultDB)
-  Chitchat.logs = Chitchat.db.global.logs
-  Chitchat.messages = Chitchat.db.global.messages
-  Chitchat.notes = Chitchat.db.global.notes
-  Chitchat.tags = {} -- Chitchat.db.global.tags -- This should be created from logs["guid"] to save storage space
-  Chitchat:setupMetatable(Chitchat.logs,WhisperLog,"WHISPER_LOG")
-  Chitchat:setupMetatable(Chitchat.notes,PersonalNote,"PERSONAL_NOTE")
-  Chitchat:setupMetatable(Chitchat.messages,MessageEntry,nil)
+  Chitchat.logs = Chitchat.db.global.logs or {}
+  Chitchat.messages = Chitchat.db.global.messages or {}
+  Chitchat.notes = Chitchat.db.global.notes or {}
+  --Chitchat.tags = {} -- Chitchat.db.global.tags -- This should be created from logs["guid"] to save storage space
+  --Chitchat:setupMetatable(Chitchat.logs,WhisperLog,"WHISPER_LOG")
+  --Chitchat:setupMetatable(Chitchat.notes,PersonalNote,"PERSONAL_NOTE")
+  --Chitchat:setupMetatable(Chitchat.messages,MessageEntry,nil)
 end
 function Chitchat:setupMetatable(array, meta, tag_type)
   for index, value in ipairs(array) do
@@ -87,28 +112,6 @@ function Chitchat:setupMetatable(array, meta, tag_type)
       Chitchat:AddTag(value["tag"],tag_type,value["id"])
     end
   end
-end
-
--- Returns the ordered array of the tags
-function Chitchat:GetTags()
-  return Chitchat.tags
-end
-function Chitchat:AddTag(tag,tag_type,object_id)
-  local tags = Chitchat.tags[tag]
-  if Chitchat.tags[tag] == nil then Chitchat.tags[tag] = {} end
-  Chitchat.tags[tag][tag_type] = object_id
-  --Chitchat:Print("Tag:"..tag.." set "..tag_type.." to "..Chitchat.tags[tag][tag_type])
-end
--- Find a tag_type from a tag
-function Chitchat:FindTag(tag,tag_type)
-  local tags = Chitchat.tags[tag]
-  if tags == nil then return nil end
-  --Chitchat:Print("Tag:"..tag.." found "..tag_type.." as "..tags[tag_type])
-  return tags[tag_type]
-end
--- Returns the ordered array of the whisper logs
-function Chitchat:GetLogs()
-  return Chitchat.logs
 end
 
 function initMinimap()
@@ -134,8 +137,21 @@ function Chitchat:OnTooltipShow (tooltip)
 end
 
 function Chitchat:CommandHandler(input)
-  -- self:ToggleFrame()
-  Chitchat:FakeWhisper(math.random(0,1))
+  local cmd = strlower(input)
+	if cmd == "debug" then
+		if self.db.global.silent then
+			self.db.global.silent = false
+			self:Print("Debug mode OFF")
+		else
+			self.db.global.silent = true
+			self:Print("Debug mode ON")
+		end
+  elseif cmd == "test" then
+    self:Print("Faking a whisper.")
+    Chitchat:FakeWhisper(math.random(0,1))
+	else
+		self:ToggleFrame()
+	end
 end
 
 function Chitchat:ToggleFrame()
@@ -150,11 +166,11 @@ end
 -- incoming: 0 or 1. determines if message is sent or recieved.
 local TEST_STRING = "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Vestibulum ultricies nisi ligula, ac finibus nulla aliquet et. Suspendisse porttitor consectetur massa, ac ultrices eros ultricies quis. Nullam in magna luctus, rutrum ligula sit amet."
 function Chitchat:FakeWhisper(incoming)
-  local rnd = 00001 --math.random(10000,99999)
-  local guid = "9x099000000"..rnd
-  local sender = "P"..rnd.."-Server"..rnd
+  local rnd = math.random(1,99999)
+  local tag = "Prototype"..rnd.."-"..GetRealmName()
   local message = strsub(TEST_STRING,0,math.random(11, strlen(TEST_STRING)))
-  Chitchat:HandleWhisper(guid, sender, message, time(), incoming)
+  Chitchat:HandleWhisper(tag, message, time(), incoming)
+  Chitchat:UpdatePersonalNote(tag,"Test Message, Please Ignore.",math.random(0,10),"TANK","DEATHKNIGHT")
 end
 -- Handle Incoming WoW Whispers
 function Chitchat:OnEventWhisperIncoming(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
@@ -168,281 +184,237 @@ end
 -- Locates the Entry by looking up the assigned tag.
 -- Create a whisper and add the id to the entries's whisper table.
 function Chitchat:HandleWhisper(tag, message, timestamp, incoming)
-  local message_id = Chitchat:CreateMessageEntry(tag, message, timestamp, incoming)
+  local message_id = Chitchat:CreateMessageEntry(tag, message, timestamp, incoming)[ID_KEY]
   local whisper_log = Chitchat:FindOrCreateWhisperLog(tag)
   if whisper_log == nil then
     error("HandleWhisper: Unable to find or create a whisper log.",2)
   end
-  -- Add whisper_id to the whisper log
-  --whisper_log:AddMessage(message_id)
+  
   tinsert(whisper_log.messages, message_id)
-  whisper_log.unread = 1
-  self:SendMessage("CHITCHAT_LOG_UPDATED", whisper_log.id, message_id)
+  whisper_log[UNREAD_KEY] = 1
+  self:SendMessage("CHITCHAT_LOG_UPDATED", whisper_log[TAG_KEY], message_id)
 end
 
----------------------------------------------------------------
--- Usage:
--- FindOrCreateWhisperLog -- Returns whisper_log object
--- FindWhisperLog -- Returns whisper_log id
--- CreateWhisperLog -- Returns whisper_log id
+----------------------------------------------------------------------------
+-- HAVE WE MET 
+----------------------------------------------------------------------------
 
-WhisperLog = {}
-WhisperLog.__index = WhisperLog
-
--- Locates Log for guid or creates it if does not already exist
-function Chitchat:FindOrCreateWhisperLog(tag)
-  -- Retrieve log id
-  local log_id = Chitchat:FindTag(tag,"WHISPER_LOG")
-  if log_id == nil then
-    log_id = Chitchat:CreateWhisperLog(tag)
-    Chitchat:AddTag(tag, "WHISPER_LOG", log_id) -- Update the Tags to include a id to note.
-  end
-  return Chitchat:GetLogs()[log_id]
-end
-
--- All WhisperLogs are stored as Chitchat.logs. Logs are an array
-function Chitchat:CreateWhisperLog(tag)
-  local whisper_log = {}
-
-  if type(tag)~="string" then
-    error(("CreateWhisperLog: 'tag' - string expected got '%s'."):format(type(tag)),2)
-  end
-  if tag == "" then
-    error(("CreateWhisperLog: 'tag' - empty tag not allowed."),2)
-  end
-  if Chitchat:FindTag(tag,"WHISPER_LOG") ~= nil then
-    error(("CreateWhisperLog: 'tag' - '%s' already exists"):format(tag),2)
-  end
-  
-  setmetatable(whisper_log,self)
-  tinsert(Chitchat:GetLogs(), whisper_log)
-  whisper_log.tag = tag -- Ties the log to a predictable unique string, whispers are guid pased while channels are global name based.
-  whisper_log.messages = {} -- Internal id of all whispers.
-  whisper_log.unread = 1 -- Flags log as containing new whispers
-  whisper_log.id = table.getn(Chitchat:GetLogs())
-  
-  Chitchat:Print("Created Log ("..whisper_log.id..") for "..whisper_log.tag)
-  Chitchat:SendMessage("CHITCHAT_LOG_CREATED", whisper_log.id, tag)
-  
-  return whisper_log.id
-end
-function WhisperLog:GetID()
-  return self.id
-end
-function WhisperLog:GetTag()
-  return self.tag
-end
-function WhisperLog:SetTag(newTag)
-  self.tag = newTag
-end
-function WhisperLog:GetMessages()
-  return self.messages
-end
-function WhisperLog:AddMessage(message_id)
-  tinsert(self.messages, message_id)
-  self:SetUnread()
-end
-function WhisperLog:SetUnread()
-  self.unread = 1
-end
-function WhisperLog:SetRead()
-  self.unread = 0
-end
-function WhisperLog:IsUnread()
-  return self.unread == 1
-end
----------------------------------------------------------------
--- Usage:
--- UpdatePersonalNote -- Returns nothing.
--- FindOrCreatePersonalNote -- Returns personal_note object
--- CreatePersonalNote -- Returns personal note id
-
--- Returns the ordered array of the personal notes
-function Chitchat:GetNote()
-  return Chitchat.notes
-end
-
-PersonalNote = {}
-PersonalNote.__index = PersonalNote
-
--- UPDATE
-function Chitchat:UpdatePersonalNote(tag,note,rating,role,klass)
-  local personal_note = Chitchat:FindOrCreatePersonalNote(tag)
-  if personal_note == nil then
-    error("UpdatePersonalNote: Unable to find or create a personal note.",2)
-  else
-    local updated = false
-    if rating ~= nil then
-      personal_note:SetRating(rating)
-      updated = true
+function Chitchat:UnitPopup_ShowMenu(dropdownMenu, which, unit, name, userData, ...)
+  for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
+    local button = _G["DropDownList"..UIDROPDOWNMENU_MENU_LEVEL.."Button"..i]
+    if button.value == "CC_EDIT_NOTE" then
+      button.func =  Chitchat.EditNoteDropdown
     end
-    if note ~= nil then
-      personal_note:SetNote(note)
-      updated = true
+  end
+end
+
+function Chitchat:EditNoteDropdown()
+	local menu = UIDROPDOWNMENU_INIT_MENU
+  local name = menu.name
+  local realm = menu.server
+  if realm == nil then
+    realm = GetRealmName()
+  end
+	local tag = name.."-"..realm
+	Chitchat:EditNoteHandler(tag)
+end
+
+function Chitchat:EditNoteHandler(input)
+  local tag
+  if input and #input > 0 then
+    tag = input
+  end
+  if tag ~= nil then
+    local personal_note = Chitchat:GetNote(tag)
+    local note = ""
+    local rating = 0
+    if personal_note ~= nil then
+      note = personal_note[NOTE_KEY]
+      rating = personal_note[RATING_KEY]
     end
-    if roles ~= nil then
-      personal_note:SetRole(role)
-      updated = true
+    local frame = Chitchat.editNoteFrame
+    frame.charname:SetText(tag)
+    ChitchatEditFrameNote:SetText(note)
+    ChitchatEditFrameSlider:SetValue(rating)
+    frame:Show()
+    frame:Raise()
+  end
+end
+
+-- Handle Group changes
+function Chitchat:OnEventGroupRosterUpdate(self, args)
+  Chitchat:HandleGroupChange()
+end
+
+function Chitchat:HandleGroupChange()
+  self:Debug("Group Changed")
+  local group_size = GetNumGroupMembers()
+  local valid_players = 0
+  if group_size == 0 then
+    return
+  end
+  local group_type = "Raid"
+  local group_size_max = 40
+  if UnitInParty("player") and UnitInRaid("player") == nil then
+    group_type = "Party"
+    group_size_max = 5
+    valid_players = 1
+  end
+  
+  for i=1, group_size_max do
+    --local _, _, _, p_level, _, _, _, _, _, _, _, _ = GetRaidRosterInfo(i)
+    local p_name, p_realm = UnitName(group_type..""..i)
+    local _, p_class = UnitClass(group_type..""..i)
+    local guid = self:GetPlayerTag(p_name, p_realm)
+    local role = UnitGroupRolesAssigned(group_type..""..i)
+    if guid ~= nil and guid ~= '' then
+      Chitchat:UpdatePersonalNote(guid,nil,nil,role,p_class)
+      valid_players = valid_players + 1
     end
-    if klass ~= nil then
-      personal_note:SetPlayerClass(klass)
-      updated = true
+    if valid_players >= group_size then break end
+  end
+end
+
+function Chitchat:GetPlayerTag(p_name, p_realm)
+  if p_name == nil then
+    return ''
+  end
+  if p_realm == nil or p_realm == '' then
+    p_realm = GetRealmName()
+  end
+  return p_name.."-"..p_realm
+end
+
+-------------------------------------------------------------------------------
+-- HAVE WE MET FRAME 
+-------------------------------------------------------------------------------
+
+function Chitchat:CreateEditNoteFrame()
+	local editwindow = CreateFrame("Frame", "ChitchatEditWindow", UIParent)
+	editwindow:SetFrameStrata("DIALOG")
+	editwindow:SetToplevel(true)
+	editwindow:SetWidth(400)
+	editwindow:SetHeight(280)
+	editwindow:SetPoint("CENTER", UIParent)
+	editwindow:SetBackdrop(
+		{bgFile="Interface\\Tooltips\\UI-Tooltip-Background", 
+	    edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", tile=true,
+		tileSize=16, edgeSize=16, insets={left=4, right=4, top=4, bottom=4}})
+	editwindow:SetBackdropColor(0,0,0,1)
+
+	local savebutton = CreateFrame("Button", nil, editwindow, "UIPanelButtonTemplate")
+	savebutton:SetText("Save")
+	savebutton:SetWidth(100)
+	savebutton:SetHeight(20)
+	savebutton:SetPoint("BOTTOM", editwindow, "BOTTOM", -60, 20)
+	savebutton:SetScript("OnClick",
+  function(this)
+    local frame = this:GetParent()
+    local tag = frame.charname:GetText()
+    local rating = math.floor(frame.slider:GetValue()+0.5)
+    Chitchat:UpdatePersonalNote(tag,frame.editbox:GetText(),rating, nil, nil)
+    frame:Hide()
+  end)
+
+	local cancelbutton = CreateFrame("Button", nil, editwindow, "UIPanelButtonTemplate")
+	cancelbutton:SetText("Cancel")
+	cancelbutton:SetWidth(100)
+	cancelbutton:SetHeight(20)
+	cancelbutton:SetPoint("BOTTOM", editwindow, "BOTTOM", 60, 20)
+	cancelbutton:SetScript("OnClick", function(this) this:GetParent():Hide(); end)
+
+	local headertext = editwindow:CreateFontString("ChitchatEditFrameTitle", editwindow, "GameFontNormalLarge")
+	headertext:SetPoint("TOP", editwindow, "TOP", 0, -20)
+	headertext:SetText("Have we met?")
+
+	local charname = editwindow:CreateFontString("ChitchatEditFrameTag", editwindow, "GameFontNormal")
+	charname:SetPoint("BOTTOM", headertext, "BOTTOM", 0, -40)
+	charname:SetFont(charname:GetFont(), 14)
+	charname:SetTextColor(1.0,1.0,1.0,1)
+  
+  local editBoxContainer = CreateFrame("Frame", nil, editwindow)
+  editBoxContainer:SetPoint("TOPLEFT", editwindow, "TOPLEFT", 20, -150)
+  editBoxContainer:SetPoint("BOTTOMRIGHT", editwindow, "BOTTOMRIGHT", -40, 100)
+	editBoxContainer:SetBackdrop(
+		{bgFile="Interface\\Tooltips\\UI-Tooltip-Background", 
+	  edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", tile=true,
+		tileSize=16, edgeSize=16, insets={left=3, right=3, top=3, bottom=3}})
+	editBoxContainer:SetBackdropColor(0,0,0,0.9)
+
+	local editbox = CreateFrame("EditBox", "ChitchatEditFrameNote", editwindow)
+  editbox:SetFontObject("GameFontHighlight")
+	editbox:SetWidth(300)
+	editbox:SetHeight(20)
+  editbox:SetPoint("TOPLEFT", editBoxContainer, "TOPLEFT", 6, -6)
+  editbox:SetMaxLetters(255)
+  editbox:SetMultiLine(false)
+  editbox:SetTextInsets(0, 0, 0, 0)
+  editbox:SetCursorPosition(0)
+  -- editbox:SetBackdrop(
+		-- {bgFile="Interface\\Tooltips\\UI-Tooltip-Background", 
+	    -- edgeFile="Interface\\Tooltips\\UI-Tooltip-Border", tile=true,
+		-- tileSize=16, edgeSize=16, insets={left=-5, right=1, top=1, bottom=1}})
+	editbox:SetBackdropColor(0,0,0,1)
+	editbox:SetAutoFocus(true)
+	editbox:SetScript("OnShow", function(this) editbox:SetFocus() end)
+	editbox:SetScript("OnEnterPressed",
+    function(this)
+      local frame = this:GetParent()
+      local tag = frame.charname:GetText()
+      local rating = math.floor(frame.slider:GetValue()+0.5)
+      Chitchat:UpdatePersonalNote(tag,tag,frame.editbox:GetText(),rating)
+      frame:Hide()
+    end)
+	editbox:SetScript("OnEscapePressed",
+    function(this)
+      this:SetText("")
+      this:GetParent():Hide()
+    end)
+  
+  -- local rating = editwindow:CreateFontString("CN_RatingName", editwindow, "GameFontNormal")
+	-- rating:SetPoint("BOTTOM", charname, "BOTTOM", 0, -40)
+	-- rating:SetFont(charname:GetFont(), 14)
+	-- rating:SetTextColor(1.0,1.0,1.0,1)
+  -- rating:SetText("0")
+  
+  local slider = CreateFrame("Slider", 'ChitchatEditFrameSlider', editwindow,'OptionsSliderTemplate')
+  slider:ClearAllPoints()
+  slider:SetPoint("BOTTOM", charname, "BOTTOM", 0, -40)
+  --slider:SetWidth(100)
+  --slider:SetHeight(20)
+  --slider:SetOrientation('HORIZONTAL')
+  slider:SetMinMaxValues(0, 10)
+  slider:SetValueStep(1)
+  getglobal(slider:GetName() .. 'Low'):SetText('Unrated')
+  getglobal(slider:GetName() .. 'High'):SetText('10');
+  getglobal(slider:GetName() .. 'Text'):SetText('Rating: ')
+  slider:SetScript("OnValueChanged", function(self, value)
+    local val = math.floor(value+0.5)
+    if val == 0 then
+      val = "Unrated"
     end
-    self:SendMessage("CHITCHAT_NOTE_UPDATED", tag, personal_note.id)
-  end
+    getglobal(slider:GetName() .. 'Text'):SetText("Rating: "..val)
+  end)
+  slider:SetValue(0)
+  slider:Show()
+
+	editwindow.charname = charname
+	editwindow.editbox = editbox
+  --editwindow.rating = rating
+  editwindow.slider = slider
+
+  editwindow:SetMovable(true)
+  editwindow:RegisterForDrag("LeftButton")
+  editwindow:SetScript("OnDragStart",
+    function(this,button)
+      this:StartMoving()
+    end)
+  editwindow:SetScript("OnDragStop",
+    function(this)
+        this:StopMovingOrSizing()
+    end)
+  editwindow:EnableMouse(true)
+	editwindow:Hide()
+	return editwindow
 end
 
--- Find or Create a personal note
--- return: personal note table
-function Chitchat:FindOrCreatePersonalNote(tag)
-  -- Retrieve note id
-  local note_id = Chitchat:FindTag(tag,"PERSONAL_NOTE")
-  if note_id == nil then
-    note_id = Chitchat:CreatePersonalNote(tag)
-    Chitchat:AddTag(tag, "PERSONAL_NOTE", note_id) -- Update the Tags to include a id to note.
-  end
-  return Chitchat:GetNotes()[note_id]
-end 
-
--- All PersonalNote are stored as Chitchat.logs. Logs are an ordered array
-function Chitchat:CreatePersonalNote(tag)
-  local personal_note = {}
-
-  if type(tag)~="string" then
-    error(("CreatePersonalNote: 'tag' - string expected got '%s'."):format(type(tag)),2)
-  end
-  if Chitchat:FindTag(tag,"PERSONAL_NOTE") ~= nil then
-    error(("CreatePersonalNote: 'tag' - '%s' already exists"):format(tag),2)
-  end
-  
-  setmetatable(personal_note,PersonalNote)
-  tinsert(Chitchat:GetNotes(), personal_note)
-  personal_note.tag = tag -- Ties to a predictable unique string
-  personal_note.note = ""
-  personal_note.rating = 0
-  personal_note.role = 0
-  personal_note.klass = nil
-  personal_note.id = table.getn(Chitchat:GetNotes())
-  
-  print("Created Note: "..personal_note.id.." for "..personal_note.tag)
-  self:SendMessage("CHITCHAT_NOTE_CREATED", personal_note.id, tag)
-  
-  return personal_note.id
-end
-function PersonalNote:GetID()
-  return self.id
-end
-function PersonalNote:GetTag()
-  return self.tag
-end
-function PersonalNote:SetTag(newTag)
-  self.tag = newTag
-end
-
-function PersonalNote:GetNote()
-  return self.note
-end
-function PersonalNote:SetNote(newNote)
-  self.note = newNote
-end
-
-function PersonalNote:GetRating()
-  return self.rating
-end
-function PersonalNote:SetRating(newRating)
-  self.rating = newRating
-end
-
-function PersonalNote:GetRole()
-  return self.role
-end
-function PersonalNote:SetRole(newRole)
-  self.role = newRole
-end
--- 7-THD, 6-TH, 5-TD, 4-T, 3-HD, 2-H, 1-D
-function PersonalNote:IsTank()
-  local r = self.role
-  return r == 7 or r == 6 or r == 5 or r == 4
-end
-function PersonalNote:IsHealer()
-  local r = self.role
-  return r == 7 or r == 6 or r == 3 or r == 2
-end
-function PersonalNote:IsDps()
-  local r = self.role
-  return r == 7 or r == 5 or r == 3 or r == 1
-end
-function PersonalNote:SetRoles(tank,healer,dps)
-  local r = 0
-  if tank ~= nil then r = r + 4 end
-  if healer ~= nil then r = r + 2 end
-  if dps ~= nil then r = r + 1 end
-  self.role = r
-end
-
-function PersonalNote:GetPlayerClass()
-  return self.klass or ""
-end
-function PersonalNote:SetPlayerClass(newClass)
-  self.klass = newClass
-end
----------------------------------------------------------------
--- MESSAGE_ENTRY # is a single whisper.
--- Usage:
--- CreateMessageEntry -- Returns message_entry id
-
--- Returns the ordered array of the messages entries
-function Chitchat:GetMessages()
-  return Chitchat.messages
-end
-
-MessageEntry = {}
-MessageEntry.__index = MessageEntry
--- All entries are stored in an array and referenced by Chitchat.logs
-function Chitchat:CreateMessageEntry(player, message, timestamp, incoming)
-  local message_entry = {}
-
-  if type(player)~="string" then
-    error(("CreateMessageEntry: 'player' - string expected got '%s'."):format(type(player)),2)
-  end
-  if type(message)~="string" then
-    error(("CreateMessageEntry: 'message' - string expected got '%s'."):format(type(message)),2)
-  end
-  if type(incoming)~= "number" then
-    error(("CreateMessageEntry: 'incoming' - number expected got '%s'."):format(type(incoming)),2)
-  end
-  
-  -- Message was sent by the player
-  if incoming == 0 then
-    local name = UnitName("player")
-    local realm = GetRealmName()
-    player = name.."-"..realm
-  end
-
-  setmetatable(message_entry, MessageEntry)
-  tinsert(self:GetMessages(),message_entry)
-  message_entry.player = player
-  message_entry.message = message
-  message_entry.timestamp = timestamp
-  message_entry.incoming = incoming
-  message_entry.id = table.getn(Chitchat:GetMessages())
-  
-  self:SendMessage("CHITCHAT_MESSAGE_CREATED", message_entry.id, player)
-  return message_entry.id
-end
-function MessageEntry:GetMessage()
-  return self.message
-end
-function MessageEntry:GetTimestamp()
-  return self.timestamp
-end
-function MessageEntry:IsIncoming()
-  return self.incoming == 1
-end
-function MessageEntry:GetSender()
-  local sender = self.player
-  if sender == nil then
-    sender = "Unknown"
-  end
-  return sender
-end

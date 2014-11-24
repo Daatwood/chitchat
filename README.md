@@ -5,26 +5,24 @@ Chitchat - Records and manages messages from players.
 Chitchat Goal:
 Record whispers from players.
 
-WhisperLog
+WhisperLog, KEY = tag
 String tag - unique link to a player
 Boolean unread - determines if there are new enties
 Integer[] whispers - an array of WhisperEntry ids
-Integer id - WhisperLog unique id
 
-MessageEntry
-String tag - unique link to a player
+MessageEntry, KEY = id
+String sender - player sent message
 String message - contents of the whisper
 String timestamp - time and date of the message
 Boolean incoming - determines if the message was sent or received
 Integer id - WhisperEntry unique id
 
-PlayerNote
+PlayerNote, KEY = tag
 String tag - unique link to a player
 String note - User added notes of a player.
 Integer rating - User added rating
 String class - User added player class
 Integer roles - User added roles(Healer,Dps,Tank)7-THD, 6-TH, 5-TD, 4-T, 3-HD, 2-H, 1-D
-Integer id - PlayerNote unique id
 
 -- Virtual Table, Generated in Chitchat
 Tags

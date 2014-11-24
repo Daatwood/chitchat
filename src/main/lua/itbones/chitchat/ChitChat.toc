@@ -5,6 +5,7 @@
 ## SavedVariables: ChitchatDB
 ## X-Category: Interface Enhancements
 
-ChitChat.xml
+embeds.xml
 ChitChat.lua
+ChitChat.xml
 Frame.xml

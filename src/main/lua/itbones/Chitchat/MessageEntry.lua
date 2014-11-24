@@ -1,15 +1,29 @@
+---------------------------------------------------------------
 -- MESSAGE_ENTRY # is a single whisper.
 -- Usage:
 -- CreateMessageEntry -- Returns message_entry id
 
 -- Returns the ordered array of the messages entries
 function Chitchat:GetMessages()
-  return Chitchat.messages
+  return self.messages
+end
+function Chitchat:GetMessage(index)
+  return self.messages[index]
+end
+function Chitchat:AddMessage(message)
+  local i = self:GetMessageIndex()
+  while self.messages[i] ~= nil do
+    i = i + 1
+  end
+  message[ID_KEY] = i
+  self.messages[tostring(i)] = message
+  self.messages[INDEX_KEY] = i + 1
+  return message
+end
+function Chitchat:GetMessageIndex()
+  return self.messages[INDEX_KEY]
 end
 
-MessageEntry = {}
-MessageEntry.__index = MessageEntry
--- All entries are stored in an array and referenced by Chitchat.logs
 function Chitchat:CreateMessageEntry(player, message, timestamp, incoming)
   local message_entry = {}
 
@@ -18,9 +32,6 @@ function Chitchat:CreateMessageEntry(player, message, timestamp, incoming)
   end
   if type(message)~="string" then
     error(("CreateMessageEntry: 'message' - string expected got '%s'."):format(type(message)),2)
-  end
-  if type(timestamp)~="string" then
-    error(("CreateMessageEntry: 'timestamp' - string expected got '%s'."):format(type(timestamp)),2)
   end
   if type(incoming)~= "number" then
     error(("CreateMessageEntry: 'incoming' - number expected got '%s'."):format(type(incoming)),2)
@@ -33,30 +44,11 @@ function Chitchat:CreateMessageEntry(player, message, timestamp, incoming)
     player = name.."-"..realm
   end
 
-  setmetatable(message_entry, MessageEntry)
-  tinsert(self:GetMessages(),message_entry)
-  message_entry.player = player
-  message_entry.message = message
-  message_entry.timestamp = timestamp
-  message_entry.incoming = incoming
-  message_entry.id = table.getn(Chitchat:GetMessages())
-  
-  self:SendMessage("CHITCHAT_MESSAGE_CREATED", message_entry.id, player)
-  return message_entry.id
-end
-function MessageEntry:GetMessage()
-  return self.message
-end
-function MessageEntry:GetTimestamp()
-  return self.timestamp
-end
-function MessageEntry:IsIncoming()
-  return self.incoming == 1
-end
-function MessageEntry:GetSender()
-  local sender = self.player
-  if sender == nil then
-    sender = "Unknown"
-  end
-  return sender
+  message_entry[SENDER_KEY] = player
+  message_entry[MESSAGE_KEY] = message
+  message_entry[TIMESTAMP_KEY] = timestamp
+  message_entry[INCOMING_KEY] = incoming
+  self:AddMessage(message_entry)
+  self:SendMessage("CHITCHAT_MESSAGE_CREATED", message_entry[ID_KEY])
+  return message_entry
 end

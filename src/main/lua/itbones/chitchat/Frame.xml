@@ -19,13 +19,41 @@
           <TexCoords left="0.49804688" right="0.90625000" top="0.12792969" bottom="0.17285156"/>  
         </Texture>
       </Layer>
+      <Layer level="BORDER">
+        <Texture name="$parentClassIcon" parentKey="classIcon">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="TOPRIGHT" x="-4" y="-4"/>
+					</Anchors>
+				</Texture>
+      </Layer>
       <Layer level="ARTWORK">
         <FontString name="$parentName" inherits="GameFontNormal" justifyH="LEFT" parentKey="name" >
-          <Size x="200" y="25"/>
+          <Size x="178" y="25"/>
           <Anchors>
-            <Anchor point="CENTER">
+            <Anchor point="LEFT">
               <Offset>
-                <AbsDimension x="0" y="0"/>
+                <AbsDimension x="22" y="8"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </FontString>
+        <FontString name="$parentNote" inherits="GameFontNormalSmall" justifyH="LEFT" parentKey="note" >
+          <Size x="178" y="25"/>
+          <Anchors>
+            <Anchor point="LEFT">
+              <Offset>
+                <AbsDimension x="22" y="-10"/>
+              </Offset>
+            </Anchor>
+          </Anchors>
+        </FontString>
+        <FontString name="$parentRole" inherits="GameFontNormal" justifyH="LEFT" parentKey="role" >
+          <Size x="30" y="46"/>
+          <Anchors>
+            <Anchor point="TOPLEFT">
+              <Offset>
+                <AbsDimension x="2" y="-3"/>
               </Offset>
             </Anchor>
           </Anchors>
