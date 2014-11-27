@@ -67,8 +67,159 @@
     </Scripts>
   </Button>
 
+  <Frame name="ChitchatFrameTemplate" virtual="true">
+    <Frames>
+      <Frame parentKey="LeftInset" useParentLevel="true" inherits="InsetFrameTemplate">
+        <Size x="260" y="496"/>
+        <Anchors>
+          <Anchor point="TOPLEFT" x="12" y="-60" />
+          <Anchor point="BOTTOMLEFT" x="4" y="46" />
+        </Anchors>
+      </Frame>
+
+      <Frame parentKey="RightInset" useParentLevel="true" inherits="InsetFrameTemplate">
+        <Anchors>
+          <Anchor point="TOPRIGHT" x="-30" y="-60" />
+          <Anchor point="BOTTOMLEFT" relativeKey="$parent.LeftInset" relativePoint="BOTTOMRIGHT" x="20" y="0"/>
+        </Anchors>
+      </Frame>
+        
+      <EditBox name="ChitchatFrameSearchBox" inherits="SearchBoxTemplate" parentKey="searchBox" letters="40">
+        <Size x="237" y="20"/>
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeKey="ChitchatFrameTemplate.LeftInset" x="15" y="-4"/>
+        </Anchors>
+      </EditBox>
+      
+      <ScrollFrame name="ChitchatFrameScrollBar" inherits="FauxScrollFrameTemplate" hidden="false">
+        <Anchors>
+          <!-- Controls frame entry position -->
+          <Anchor point="TOPLEFT" relativeKey="ChitchatFrameTemplate.LeftInset" x="0" y="-28"/>
+          <!-- Controls frame scrollbar position -->
+          <Anchor point="BOTTOMRIGHT" relativeKey="ChitchatFrameTemplate.LeftInset" x="-4" y="0"/>
+        </Anchors>
+        <Scripts>
+          <OnVerticalScroll>
+            FauxScrollFrame_OnVerticalScroll(self, offset, 46, Chitchat_OnScrollUpdate);
+          </OnVerticalScroll>
+          <OnShow>
+            Chitchat_OnScrollUpdate()
+          </OnShow>
+        </Scripts>
+      </ScrollFrame>
+
+      <ScrollFrame name="ChitchatFrameNoteScrollFrame" inherits="UIPanelScrollFrameTemplate">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeKey="ChitchatFrameTemplate.RightInset" x="4" y="0"/>
+          <Anchor point="BOTTOMRIGHT" relativeKey="ChitchatFrameTemplate.RightInset" x="-4" y="0"/>
+        </Anchors>
+        <ScrollChild>
+          <SimpleHTML name="ChitchatNote" >
+            <Size>
+              <AbsDimension x="378" y="10"/>
+            </Size>
+            <Scripts>
+              <OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
+              <!--OnHyperlinkClick>ChatFrame_OnHyperlinkShow(self, link, text, button)</OnHyperlinkClick-->
+            </Scripts>
+            <FontString inherits="GameFontHighlightSmall" /> 
+            <FontStringHeader1 inherits="ChitchatFontHeader"/>
+          </SimpleHTML>
+        </ScrollChild>
+      </ScrollFrame>
+        <Button name="ChitchatFrameEntry1" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameScrollBar" relativePoint="TOPLEFT">
+              <Offset>
+                <AbsDimension x="8" y="0"/>
+              </Offset>
+             </Anchor>
+          </Anchors>
+        </Button>
+        <Button name="ChitchatFrameEntry2" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry1" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+        <Button name="ChitchatFrameEntry3" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry2" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+        <Button name="ChitchatFrameEntry4" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry3" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+        <Button name="ChitchatFrameEntry5" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry4" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+        <Button name="ChitchatFrameEntry6" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry5" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+        <Button name="ChitchatFrameEntry7" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry6" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+      <Button name="ChitchatFrameEntry8" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry7" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+      <Button name="ChitchatFrameEntry9" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry8" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+      <Button name="ChitchatFrameEntry10" inherits="ChitchatFrameEntryTemplate">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry9" relativePoint="BOTTOMLEFT"/>
+          </Anchors>
+        </Button>
+      <Frame name="ChitchatFrameDropDown" inherits="UIDropDownMenuTemplate" id="1" hidden="true">
+        <Size>
+          <AbsDimension x="10" y="10"/>
+        </Size>
+        <Anchors>
+          <Anchor point="TOP">
+            <Offset>
+              <AbsDimension x="10" y="-60"/>
+            </Offset>
+          </Anchor>
+        </Anchors>
+      </Frame>
+    </Frames>
+  </Frame>
+  
+  <Frame name="HaveWeMetFrameTemplate" virtual="true">
+    <Anchors>
+      <Anchor point="TOPLEFT"/>
+      <Anchor point="BOTTOMRIGHT"/>
+    </Anchors>
+    <Layers>
+      <Layer level="ARTWORK">
+        <FontString inherits="GameFontNormal" text="TODO: Note Browser">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeTo="$parent">
+          <Offset>
+            <AbsDimension x="20" y="-30"/>
+          </Offset>
+          </Anchor>
+        </Anchors>
+        </FontString>
+      </Layer>
+    </Layers>
+    <Frames>
+    </Frames> 
+  </Frame>
+  
   <!-- Answering Machine frame -->
-  <Frame name="ChitchatFrame" toplevel="true" movable="true" parent="UIParent" enableMouse="true" hidden="true">
+  <Frame name="ChitchatParent" toplevel="true" movable="true" parent="UIParent" enableMouse="true" hidden="true">
     <Size> 
       <AbsDimension x="708" y="606"/> 
     </Size> 
@@ -89,169 +240,165 @@
       </EdgeSize>
     </Backdrop>
     <Frames>
-      <Frame parentKey="LeftInset" useParentLevel="true" inherits="InsetFrameTemplate">
-        <Size x="260" y="496"/>
+      <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Conversations">
         <Anchors>
-          <Anchor point="TOPLEFT" x="12" y="-60" />
-          <Anchor point="BOTTOMLEFT" x="4" y="46" />
+          <Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="BOTTOMLEFT" x="11" y="6"/>
         </Anchors>
-      </Frame>
+        <Scripts>
+          <OnClick>
+            PanelTemplates_SetTab(ChitchatParent, self:GetID());
+            PlaySound("UI_Toybox_Tabs");
+            ChitchatFrame:Show();
+            HaveWeMetFrame:Hide();
+          </OnClick>
+        </Scripts>
+      </Button>
+      <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="HaveWeMet">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parentTab1" relativePoint="RIGHT" x="-16" y="0"/>
+        </Anchors>
+        <Scripts>
+          <OnClick>
+            PanelTemplates_SetTab(ChitchatParent, self:GetID());
+            PlaySound("UI_Toybox_Tabs");
+            ChitchatFrame:Hide();
+            HaveWeMetFrame:Show();
+          </OnClick>
+        </Scripts>
+      </Button>
+      <Frame name="ChitchatFrame" hidden="false">
+        <Anchors>
+          <Anchor point="TOPLEFT"/>
+          <Anchor point="BOTTOMRIGHT"/>
+        </Anchors>
+        <Frames>
+          <Frame parentKey="LeftInset" useParentLevel="true" inherits="InsetFrameTemplate">
+            <Size x="260" y="496"/>
+            <Anchors>
+              <Anchor point="TOPLEFT" x="12" y="-60" />
+              <Anchor point="BOTTOMLEFT" x="4" y="46" />
+            </Anchors>
+          </Frame>
       
-      <Frame parentKey="RightInset" useParentLevel="true" inherits="InsetFrameTemplate">
-        <Anchors>
-          <Anchor point="TOPRIGHT" x="-30" y="-60" />
-          <Anchor point="BOTTOMLEFT" relativeKey="$parent.LeftInset" relativePoint="BOTTOMRIGHT" x="20" y="0"/>
-        </Anchors>
-      </Frame>
-      
-      <EditBox name="$parentSearchBox" inherits="SearchBoxTemplate" parentKey="searchBox" letters="40">
-        <Size x="237" y="20"/>
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeKey="$parent.LeftInset" x="15" y="-4"/>
-        </Anchors>
-      </EditBox>
+          <Frame parentKey="RightInset" useParentLevel="true" inherits="InsetFrameTemplate">
+            <Anchors>
+              <Anchor point="TOPRIGHT" x="-30" y="-60" />
+              <Anchor point="BOTTOMLEFT" relativeKey="$parent.LeftInset" relativePoint="BOTTOMRIGHT" x="20" y="0"/>
+            </Anchors>
+          </Frame>
+          
+          <EditBox name="$parentSearchBox" inherits="SearchBoxTemplate" parentKey="searchBox" letters="40">
+            <Size x="237" y="20"/>
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeKey="$parent.LeftInset" x="15" y="-4"/>
+            </Anchors>
+          </EditBox>
     
-      <ScrollFrame name="ChitchatFrameScrollBar" inherits="FauxScrollFrameTemplate" hidden="true">
-        <Anchors>
-          <!-- Controls frame entry position -->
-          <Anchor point="TOPLEFT" relativeKey="$parent.LeftInset" x="0" y="-28"/>
-          <!-- Controls frame scrollbar position -->
-          <Anchor point="BOTTOMRIGHT" relativeKey="$parent.LeftInset" x="-4" y="0"/>
-        </Anchors>
-        <Scripts>
-          <OnVerticalScroll>
-            FauxScrollFrame_OnVerticalScroll(self, offset, 46, Chitchat_OnScrollUpdate);
-          </OnVerticalScroll>
-          <OnShow>
-            Chitchat_OnScrollUpdate()
-          </OnShow>
-        </Scripts>
-      </ScrollFrame>
-
-      <ScrollFrame name="ChitchatNoteScrollFrame" inherits="UIPanelScrollFrameTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="4" y="0"/>
-          <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="0"/>
-        </Anchors>
-        <ScrollChild>
-          <SimpleHTML name="ChitchatNote" >
-            <Size>
-              <AbsDimension x="378" y="10"/>
-            </Size>
+          <ScrollFrame name="ChitchatFrameScrollBar" inherits="FauxScrollFrameTemplate" hidden="true">
+            <Anchors>
+              <!-- Controls frame entry position -->
+              <Anchor point="TOPLEFT" relativeKey="$parent.LeftInset" x="0" y="-28"/>
+              <!-- Controls frame scrollbar position -->
+              <Anchor point="BOTTOMRIGHT" relativeKey="$parent.LeftInset" x="-4" y="0"/>
+            </Anchors>
             <Scripts>
-              <OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
-              <!--OnHyperlinkClick>ChatFrame_OnHyperlinkShow(self, link, text, button)</OnHyperlinkClick-->
+              <OnVerticalScroll>
+                FauxScrollFrame_OnVerticalScroll(self, offset, 46, Chitchat_OnScrollUpdate);
+              </OnVerticalScroll>
+              <OnShow>
+                Chitchat_OnScrollUpdate()
+              </OnShow>
             </Scripts>
-            <FontString inherits="GameFontHighlightSmall" /> 
-            <FontStringHeader1 inherits="ChitchatFontHeader"/>
-          </SimpleHTML>
-        </ScrollChild>
-      </ScrollFrame>
-      
-<!--       <EditBox name="$parentEditBox" letters="80">
-        <Size x="378" y="32" />
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="4" y="-500"/>
-            <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="90"/>
-          </Anchors>
-        <Layers>
-          <Layer level="BACKGROUND">
-            <Texture file="Interface\ChatFrame\UI-ChatInputBorder-Left">
-              <Size x="75" y="32" />
-              <Anchors>
-                <Anchor point="LEFT">
-                  <Offset x="-10" y="0" />
-                </Anchor>
-              </Anchors>
-              <TexCoords left="0" right="0.2" top="0" bottom="1.0"/>
-            </Texture>
-            <Texture file="Interface\ChatFrame\UI-ChatInputBorder-Right">
-                <Size x="75" y="32" />
-                <Anchors>
-                    <Anchor point="RIGHT">
-                        <Offset x="10" y="0" />
-                    </Anchor>
-                </Anchors>
-                <TexCoords left="0.7" right="1.0" top="0" bottom="1.0"/>
-            </Texture>
-          </Layer>
-        </Layers>
-        <Scripts>
-          <OnLoad>
-            self:ClearFocus();
-          </OnLoad>
-        </Scripts>
-        <FontString inherits="ChatFontNormal" />
-      </EditBox> -->
+          </ScrollFrame>
 
-
-      <Button name="ChitchatFrameEntry1" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameScrollBar" relativePoint="TOPLEFT">
-            <Offset>
-              <AbsDimension x="8" y="0"/>
-            </Offset>
-           </Anchor>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry2" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry1" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry3" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry2" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry4" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry3" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry5" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry4" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry6" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry5" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry7" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry6" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry8" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry7" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry9" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry8" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <Button name="ChitchatFrameEntry10" inherits="ChitchatFrameEntryTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry9" relativePoint="BOTTOMLEFT"/>
-        </Anchors>
-      </Button>
-      <!--Frame name="ChitchatLogMenu" inherits="UIDropDownMenuTemplate" enableMouse="true" parentKey="logMenu"/-->
-      <Frame name="ChitchatDropDown" inherits="UIDropDownMenuTemplate" id="1" hidden="true">
-        <Size>
-          <AbsDimension x="10" y="10"/>
-        </Size>
-        <Anchors>
-          <Anchor point="TOP">
-            <Offset>
-              <AbsDimension x="10" y="-60"/>
-            </Offset>
-          </Anchor>
-        </Anchors>
+          <ScrollFrame name="ChitchatNoteScrollFrame" inherits="UIPanelScrollFrameTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="4" y="0"/>
+              <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="0"/>
+            </Anchors>
+            <ScrollChild>
+              <SimpleHTML name="ChitchatNote" >
+                <Size>
+                  <AbsDimension x="378" y="10"/>
+                </Size>
+                <Scripts>
+                  <OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
+                  <!--OnHyperlinkClick>ChatFrame_OnHyperlinkShow(self, link, text, button)</OnHyperlinkClick-->
+                </Scripts>
+                <FontString inherits="GameFontHighlightSmall" /> 
+                <FontStringHeader1 inherits="ChitchatFontHeader"/>
+              </SimpleHTML>
+            </ScrollChild>
+          </ScrollFrame>
+          <Button name="ChitchatFrameEntry1" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameScrollBar" relativePoint="TOPLEFT">
+                <Offset>
+                  <AbsDimension x="8" y="0"/>
+                </Offset>
+               </Anchor>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry2" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry1" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry3" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry2" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry4" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry3" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry5" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry4" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry6" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry5" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry7" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry6" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry8" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry7" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry9" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry8" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Button name="ChitchatFrameEntry10" inherits="ChitchatFrameEntryTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry9" relativePoint="BOTTOMLEFT"/>
+            </Anchors>
+          </Button>
+          <Frame name="ChitchatDropDown" inherits="UIDropDownMenuTemplate" id="1" hidden="true">
+            <Size>
+              <AbsDimension x="10" y="10"/>
+            </Size>
+            <Anchors>
+              <Anchor point="TOP">
+                <Offset>
+                  <AbsDimension x="10" y="-60"/>
+                </Offset>
+              </Anchor>
+            </Anchors>
+          </Frame>
+        </Frames>
       </Frame>
+      <Frame name="HaveWeMetFrame" inherits="HaveWeMetFrameTemplate" hidden="true"></Frame>
     </Frames>
     
     <Layers>
@@ -281,6 +428,8 @@
     </Layers>
     <Scripts>
       <OnLoad>
+        PanelTemplates_SetNumTabs(self,2);
+        PanelTemplates_SetTab(self, 1);
         Chitchat:OnLoadFrame(self)
         tinsert(UISpecialFrames, self:GetName());
       </OnLoad>

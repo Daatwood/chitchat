@@ -35,6 +35,7 @@ NOTE_KEY = "note"
 RATING_KEY = "rating"
 ROLE_KEY = "role"
 CLASS_KEY = "playerclass"
+SEEN_TAG = "seen"
 
 UnitPopupButtons["CC_EDIT_NOTE"] = {text = "Have we met?", dist = 0, func = Chitchat.EditNoteDropdown}
 
@@ -63,6 +64,7 @@ function Chitchat:OnEnable()
   
   --self:RegisterMessage("HAVEWEMET_RECORD_ADDED","HaveWeMetTest")
   self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnEventGroupRosterUpdate")
+  self:RegisterMessage("CHITCHAT_PLAYER_SEEN","OnPlayerSessionAlert")
 
   -- Register Hooks
   -- HaveWeMet Hooks
@@ -155,11 +157,15 @@ function Chitchat:CommandHandler(input)
 end
 
 function Chitchat:ToggleFrame()
-  if ChitchatFrame:IsShown() then
-    HideUIPanel(ChitchatFrame)
+  if ChitchatParent:IsShown() then
+    HideUIPanel(ChitchatParent)
   else
-    ShowUIPanel(ChitchatFrame)
+    ShowUIPanel(ChitchatParent)
   end
+end
+
+function Chitchat:OnPlayerSessionAlert(self, tag)
+  Chitchat:Print("Familiar Player: "..tag)
 end
 
 -- Generate a Fake Whisper for Testing.

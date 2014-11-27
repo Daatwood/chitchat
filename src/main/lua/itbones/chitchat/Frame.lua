@@ -4,15 +4,10 @@ local selected_id = nil
 
 function Chitchat:OnLoadFrame(frame)
   initFrame()
-  local showmenu;
 	UIDropDownMenu_Initialize(ChitchatDropDown, Chitchat_InitializeLogOptionsMenu, "MENU");
   
   self:RegisterMessage("CHITCHAT_LOG_UPDATED","OnScrollUpdate")
   self:RegisterMessage("CHITCHAT_NOTE_UPDATED","OnScrollUpdate")
-  
-	-- showmenu = function()
-		-- ToggleDropDownMenu(1, nil, ChitchatDropDown, ChitchatFrameEntry1, 120, 10);
-	-- end
 end
 
 function initFrame()

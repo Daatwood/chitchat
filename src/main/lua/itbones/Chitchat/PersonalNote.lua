@@ -1,4 +1,7 @@
 -- Returns the ordered array of the personal notes
+
+Chitchat.sessionTags = {}
+
 function Chitchat:GetNote()
   return Chitchat.notes
 end
@@ -14,9 +17,16 @@ function Chitchat:AddNote(tag, personal_note)
   return self.notes[tag]
 end
 
+function Chitchat:MarkAsSeen(tag)
+  if self.sessionTags[tag] ~= nil then return false end
+  self.sessionTags[tag] = true
+  return true
+end
+
 -- UPDATE
 function Chitchat:UpdatePersonalNote(tag,note,rating,role,klass)
   local personal_note = Chitchat:FindOrCreatePersonalNote(tag)
+  
   if personal_note == nil then
     error("UpdatePersonalNote: Unable to find or create a personal note.",2)
   else
@@ -45,7 +55,16 @@ end
 -- return: personal note table
 function Chitchat:FindOrCreatePersonalNote(tag)
   local personal_note = Chitchat:GetNote(tag)
-  if personal_note ~= nil then return personal_note end
+  if personal_note ~= nil then 
+    -- Mark player as Seen.
+    if self:MarkAsSeen(tag) then
+      if personal_note[SEEN_TAG] == nil then personal_note[SEEN_TAG] = {} end
+      tinsert(personal_note[SEEN_TAG],time())
+      self:SendMessage("CHITCHAT_PLAYER_SEEN", personal_note[TAG_KEY])
+      Chitchat:Debug("Found familiar: "..tag)
+    end
+    return personal_note
+  end
   return self:CreatePersonalNote(tag)
 end 
 
@@ -65,6 +84,7 @@ function Chitchat:CreatePersonalNote(tag)
   personal_note[RATING_KEY] = 0
   personal_note[ROLE_KEY] = 0
   personal_note[CLASS_KEY] = ""
+  personal_note[SEEN_TAG] = {}
   self:SendMessage("CHITCHAT_NOTE_CREATED", personal_note[TAG_KEY])
   self:Debug("Created Note for "..personal_note[TAG_KEY])
   return self:AddNote(tag, personal_note)
