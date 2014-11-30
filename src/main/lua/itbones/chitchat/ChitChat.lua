@@ -6,9 +6,17 @@ local defaultDB = {
   global = {
     silent = false, -- Run quietly in background
     minimap = { hide = false }, -- Minimap Icon display
+    tooltipNotes = false,
     logs = {}, -- WhisperLog
     notes = {}, -- PersonalNote
+    encounters = {}, -- Casual Encounters
     messages = {index = 0}, -- MessageEntry
+    channelRecording = true,
+    channelsToRecord = {
+    ["Trade"] = true,
+    ["General"] = true,
+    },
+    recordBNConversation = true,
     menusToModify = {
       ["PLAYER"] = true, 
       ["TARGET"] = true,
@@ -16,6 +24,21 @@ local defaultDB = {
       ["FRIEND"] = true, 
       ["FRIEND_OFFLINE"] = true, 
       ["RAID_PLAYER"] = true,
+    },
+    tooltips = {
+      showInCombat = false,
+      worldFormat = {
+        default = nil,
+        expanded = "all",
+      },
+      dungeonFormat = {
+        default = "current",
+        expanded = "all",
+      },
+      raidFormat = {
+        default = "current",
+        expanded = "all",
+      },
     },
   }
 }
@@ -35,7 +58,34 @@ NOTE_KEY = "note"
 RATING_KEY = "rating"
 ROLE_KEY = "role"
 CLASS_KEY = "playerclass"
-SEEN_TAG = "seen"
+SEEN_KEY = "seen"
+ENCOUNTERS_KEY = "encounters"
+ENCOUNTERS_TIMESTAMP_KEY = "encounter-timestamp"
+
+COUNT_KEY = "count"
+DESCRIPTION_KEY = "descript"
+
+local GREEN =  "|cff00ff00"
+local YELLOW = "|cffffff00"
+local RED =    "|cffff0000"
+local BLUE =   "|cff0198e1"
+local ORANGE = "|cffff9933"
+local WHITE =  "|cffffffff"
+local tooltipNoteFormat = YELLOW.."%s "..WHITE.."%s".."|r"
+local tooltipNoteDungeonEncounterFormat = YELLOW.."   %s "..WHITE.."%s | "..ORANGE.."%s".."|r"
+
+Chitchat.WOD_DUNGEON_ZONES = {
+  "Auchidoun",
+  "Bloodmaul Slag Mines",
+  "Grimrail Depot",
+  "Iron Docks",
+  "Shadowmoon Burial Grounds",
+  "Skyreach",
+  "The Everbloom",
+  "Upper Blackrock Spire"
+}
+
+Chitchat.inspectGuid = nil
 
 UnitPopupButtons["CC_EDIT_NOTE"] = {text = "Have we met?", dist = 0, func = Chitchat.EditNoteDropdown}
 
@@ -61,8 +111,14 @@ function Chitchat:OnEnable()
   -- Register Events
   self:RegisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
   self:RegisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
+  if self.db.global.channelRecording then
+    self:RegisterEvent("CHAT_MSG_CHANNEL","OnEventChannelChatMessage")
+  end
+  if self.db.global.recordBNConversation then
+    self:RegisterEvent("CHAT_MSG_BN_WHISPER","OnEventBnetWhisperIncoming")
+    self:RegisterEvent("CHAT_MSG_BN_WHISPER_INFORM","OnEventBnetWhisperOutgoing")
+  end
   
-  --self:RegisterMessage("HAVEWEMET_RECORD_ADDED","HaveWeMetTest")
   self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnEventGroupRosterUpdate")
   self:RegisterMessage("CHITCHAT_PLAYER_SEEN","OnPlayerSessionAlert")
 
@@ -76,7 +132,7 @@ function Chitchat:OnEnable()
   end
   self:SecureHook("UnitPopup_ShowMenu")
   
-  --self:HookScript(GameTooltip, "OnTooltipSetUnit")
+  self:HookScript(GameTooltip, "OnTooltipSetUnit")
 
   -- Create Frames
   self.editNoteFrame = self:CreateEditNoteFrame()
@@ -98,10 +154,11 @@ function Chitchat:OnDisable()
 end
 
 function initDatabase()
-  Chitchat.db = LibStub("AceDB-3.0"):New("ChitchatDB",defaultDB)
+  Chitchat.db = LibStub("AceDB-3.0"):New("ChitchatDB",defaultDB,true)
   Chitchat.logs = Chitchat.db.global.logs or {}
   Chitchat.messages = Chitchat.db.global.messages or {}
   Chitchat.notes = Chitchat.db.global.notes or {}
+  Chitchat.encounters = Chitchat.db.global.encounters or {}
   --Chitchat.tags = {} -- Chitchat.db.global.tags -- This should be created from logs["guid"] to save storage space
   --Chitchat:setupMetatable(Chitchat.logs,WhisperLog,"WHISPER_LOG")
   --Chitchat:setupMetatable(Chitchat.notes,PersonalNote,"PERSONAL_NOTE")
@@ -151,6 +208,8 @@ function Chitchat:CommandHandler(input)
   elseif cmd == "test" then
     self:Print("Faking a whisper.")
     Chitchat:FakeWhisper(math.random(0,1))
+  elseif cmd == "statupdate" then
+    self:AddSelfStatistics()
 	else
 		self:ToggleFrame()
 	end
@@ -178,6 +237,16 @@ function Chitchat:FakeWhisper(incoming)
   Chitchat:HandleWhisper(tag, message, time(), incoming)
   Chitchat:UpdatePersonalNote(tag,"Test Message, Please Ignore.",math.random(0,10),"TANK","DEATHKNIGHT")
 end
+function Chitchat:OnEventChannelChatMessage(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
+  --print(message..", "..sender..", "..lang..", "..channelString..", "..target..", "..flags..", "..arg7..", "..channelNumber..", "..channelName..", "..arg10..", "..counter..", "..guid)
+  Chitchat:HandleChatMessage(channelName,sender,message,time())
+ end
+function Chitchat:OnEventBnetWhisperIncoming(self, message, sender, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, counter, arg12, presenceID, arg14)
+  print(message..", "..sender..", "..arg3..", "..arg4..", "..arg5..", "..arg6..", "..arg7..", "..arg8..", "..arg9..", "..arg10..", "..counter..", "..arg12..", "..presenceID..", "..arg14)
+end
+function Chitchat:OnEventBnetWhisperOutgoing(self, message, sender, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, counter, arg12, presenceID, arg14)
+  print(message..", "..sender..", "..arg3..", "..arg4..", "..arg5..", "..arg6..", "..arg7..", "..arg8..", "..arg9..", "..arg10..", "..counter..", "..arg12..", "..presenceID..", "..arg14)
+end
 -- Handle Incoming WoW Whispers
 function Chitchat:OnEventWhisperIncoming(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
   Chitchat:HandleWhisper(sender, message, time(), 1)
@@ -201,9 +270,82 @@ function Chitchat:HandleWhisper(tag, message, timestamp, incoming)
   self:SendMessage("CHITCHAT_LOG_UPDATED", whisper_log[TAG_KEY], message_id)
 end
 
+function Chitchat:HandleChatMessage(channel,tag,message,timestamp)
+  local message_id = Chitchat:CreateMessageEntry(tag, message, timestamp, 2)[ID_KEY]
+  local chat_log = Chitchat:FindOrCreateWhisperLog(channel)
+  if chat_log == nil then
+    error("HandleChatMessage: Unable to find or create a chat log.",2)
+  end
+  tinsert(chat_log.messages, message_id)
+end
+
 ----------------------------------------------------------------------------
 -- HAVE WE MET 
 ----------------------------------------------------------------------------
+function Chitchat:OnTooltipSetUnit(tooltip, ...)
+  --if self.db.global.tooltipNotes == false then return end
+  local name, unitid = tooltip:GetUnit()
+  local tag, note, rating,seen,personal_note,encounter
+
+-- If the unit exists and is a player then check if there is a note for it.
+  if UnitExists(unitid) and UnitIsPlayer(unitid) then
+    name, realm = UnitName(unitid)
+    if realm == nil then
+      realm = GetRealmName()
+    end
+    tag = name.."-"..realm
+    personal_note = Chitchat:GetNote(tag)
+    if personal_note ~= nil then
+      rating = personal_note[RATING_KEY]
+      note = personal_note[NOTE_KEY]
+      encounter = personal_note[ENCOUNTERS_KEY]
+      seen = personal_note[SEEN_KEY]
+      --if note:len() > 40 then note = note:sub(1,40).."..." end
+      if type(rating) == "number" and rating > 0  then tooltip:AddLine(tooltipNoteFormat:format("Rated ", rating),1, 1, 1, false) end
+      if note ~= nil and note ~= "" then tooltip:AddLine(tooltipNoteFormat:format("Note:",note),1, 1, 1, true) end
+      if seen ~= nil then tooltip:AddLine(tooltipNoteFormat:format("Last Seen:",date("%m/%d/%y %H:%M:%S", seen[#personal_note[SEEN_KEY]])),1,1,1,false) end
+      local showExpandedTooltip = IsShiftKeyDown()
+      if personal_note[ENCOUNTERS_TIMESTAMP_KEY] ~= nil and personal_note[ENCOUNTERS_TIMESTAMP_KEY] + 1800 < time() then
+        personal_note[ENCOUNTERS_KEY] = {}
+        encounter = nil
+      end
+      if encounter ~= nil then
+        tooltip:AddLine(tooltipNoteFormat:format("Encounters",date("%m/%d/%y %H:%M:%S", personal_note[ENCOUNTERS_TIMESTAMP_KEY])),1,1,1,false)
+        local inInstance, instanceType = IsInInstance()
+        if inInstance then
+          -- When in Dungeon shift shows all Dungeons/Heroic
+          if instanceType == "party" then
+            local instances = { GetZoneText() }
+            if showFullInfo then instances = self.WOD_DUNGEON_ZONES end
+            local i, zone, nk, hk
+            for i, zone in ipairs(instances) do
+              nk, hk = Chitchat:GetEncounterDungeonKills(tag,zone)
+              tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
+            end
+          -- Shift shows all current raid bosses and kills
+          elseif instanceType == "raid" then
+            print("raid stuff")
+          end
+        else
+          -- Show Expanded World Tooltip
+          if showExpandedTooltip then
+            local instances = self.WOD_DUNGEON_ZONES
+            local i, zone, nk, hk
+            for i, zone in ipairs(instances) do
+              nk, hk = Chitchat:GetEncounterDungeonKills(tag,zone)
+              tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
+            end
+          -- Show World Tooltip
+          end
+        end
+      else
+        local blizzId = nil
+        Chitchat:DoEncounterInspect(unitid, tag, blizzId,false)
+        tooltip:AddLine(tooltipNoteFormat:format("Encounters:","Loading..."),1, 1, 1, false)
+      end
+    end
+  end
+end
 
 function Chitchat:UnitPopup_ShowMenu(dropdownMenu, which, unit, name, userData, ...)
   for i = 1, UIDROPDOWNMENU_MAXBUTTONS do
@@ -237,6 +379,7 @@ function Chitchat:EditNoteHandler(input)
     if personal_note ~= nil then
       note = personal_note[NOTE_KEY]
       rating = personal_note[RATING_KEY]
+      if type(rating) ~= "number" then rating = 0 end
     end
     local frame = Chitchat.editNoteFrame
     frame.charname:SetText(tag)
@@ -266,19 +409,27 @@ function Chitchat:HandleGroupChange()
     group_size_max = 5
     valid_players = 1
   end
-  
+  --self:ClearEncounterQueue()
   for i=1, group_size_max do
     --local _, _, _, p_level, _, _, _, _, _, _, _, _ = GetRaidRosterInfo(i)
-    local p_name, p_realm = UnitName(group_type..""..i)
-    local _, p_class = UnitClass(group_type..""..i)
+    local unitId = group_type..""..i
+    local p_name, p_realm = UnitName(unitId)
+    local _, p_class = UnitClass(unitId)
     local guid = self:GetPlayerTag(p_name, p_realm)
-    local role = UnitGroupRolesAssigned(group_type..""..i)
+    local role = UnitGroupRolesAssigned(unitId)
     if guid ~= nil and guid ~= '' then
-      Chitchat:UpdatePersonalNote(guid,nil,nil,role,p_class)
+      self:UpdatePersonalNote(guid,nil,nil,role,p_class)
+      --self:AddToEncounterQueue(unitId,guid)
+      -- Perform a Encounter Update/Check
+      -- local personal_note = self:GetPersonalNote(tag)
+      -- if personal_note[ENCOUNTERS_TIMESTAMP_KEY] ~= nil and personal_note[ENCOUNTERS_TIMESTAMP_KEY] + 3600 > time() then
+        
+      -- end
       valid_players = valid_players + 1
     end
     if valid_players >= group_size then break end
   end
+  --self:DoEncounterQueue()
 end
 
 function Chitchat:GetPlayerTag(p_name, p_realm)

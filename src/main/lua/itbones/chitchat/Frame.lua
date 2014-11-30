@@ -137,7 +137,7 @@ function Chitchat:ShowWhispers(log_tag)
           message = "<br/><p align='center'>"..displayDate.."</p>"
         end
         
-        message = message.."<p>|cFFA9A9A9["..currentTime.."]|r|c"..color.."["..whisper[SENDER_KEY].."]: "..whisper[MESSAGE_KEY].."|r</p>"
+        message = message.."<p>|cFFA9A9A9["..currentTime.."]|r|c"..color.."["..whisper[SENDER_KEY].."]: "..whisper[MESSAGE_KEY].."|r</p> "
         
         --message = "<p align='"..alignment.."'>"..sender.."</p>"
         -- message = message.."<img src='Interface\Icons\Ability_Ambush' width='32' height='32' align='left'/>"

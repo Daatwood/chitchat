@@ -43,6 +43,12 @@ function Chitchat:CreateMessageEntry(player, message, timestamp, incoming)
     local realm = GetRealmName()
     player = name.."-"..realm
   end
+  
+  -- Escape special characters in message.
+  message = message:gsub("<", "&lt;")
+  message = message:gsub('"', "&quot;")
+  message = message:gsub(">", "&gt;")
+  message = message:gsub("&", "&amp;")
 
   message_entry[SENDER_KEY] = player
   message_entry[MESSAGE_KEY] = message
