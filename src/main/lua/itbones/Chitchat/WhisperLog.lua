@@ -13,6 +13,23 @@ function Chitchat:AddLog(tag, whisper_log)
   return self.logs[tag]
 end
 
+function Chitchat:WhisperLogSet(tag,property,value)
+  local whisper_log = Chitchat:GetLog(tag)
+  if whisper_log ~= nil then
+    whisper_log[property] = value
+    self:Debug(tag..' set '..property..' to '..tostring(value))
+    self:SendMessage("CHITCHAT_LOG_UPDATED", tag)
+  end
+end
+
+function Chitchat:WhisperLogGet(tag,property)
+  local whisper_log = Chitchat:GetLog(tag)
+  if whisper_log ~= nil then
+    return whisper_log[property] or false
+  end
+  return false
+end
+
 -- Locates Log for guid or creates it if does not already exist
 function Chitchat:FindOrCreateWhisperLog(tag)
   local whisper_log = Chitchat:GetLog(tag)
@@ -20,7 +37,7 @@ function Chitchat:FindOrCreateWhisperLog(tag)
   return self:CreateWhisperLog(tag)
 end
 
-function Chitchat:DeleteWhisperLog(tag)
+function Chitchat:DeleteWhisperLog(tag,onlyDeleteMessages)
   -- Retrieve log id
   local whisper_log = Chitchat:GetLog(tag)
   if whisper_log ~= nil then
@@ -30,14 +47,14 @@ function Chitchat:DeleteWhisperLog(tag)
         for index, value in ipairs(whisper_log[MESSAGES_KEY]) do
           self.messages[tostring(value)] = nil
         end
+        whisper_log[MESSAGES_KEY] = nil
         self:Debug("Deleted all recorded messages.")
       end
-    
-      self.logs[tag] = nil
-      self:Debug("Deleted WhisperLog for "..tag)
+      if not onlyDeleteMessages then
+        self.logs[tag] = nil
+        self:Debug("Deleted WhisperLog for "..tag)
+      end
       self:SendMessage("CHITCHAT_LOG_DELETED", tag)
-      self:OnScrollUpdate()
-      ChitchatNote:SetText("")
     else
       self:Print(("DeleteWhisperLog: Unable able to delete log.'%s' != '%s'"):format(tag,whisper_log["tag"]))
     end
@@ -63,6 +80,7 @@ function Chitchat:CreateWhisperLog(tag)
   whisper_log[TAG_KEY] = tag
   whisper_log[MESSAGES_KEY] = {}
   whisper_log[UNREAD_KEY] = 0
+  whisper_log[HIDE_CHAT_KEY] = false
   self:SendMessage("CHITCHAT_MESSAGE_CREATED", whisper_log[TAG_KEY])
   self:Debug("Created Log for "..whisper_log[TAG_KEY])
   return self:AddLog(tag, whisper_log)

@@ -1,19 +1,9 @@
 
--- function Chitchat:ResetInspection()
-  -- if requestedAchievementData then
-    -- ClearAchievementComparisonUnit();
-    -- requestedAchievementData = nil
-  -- end
-  -- Chitchat.inspectUnit = nil
-  -- Chitchat.inspectUnitType = nil
-  -- Chitchat.canInspect = nil
--- end
-
 -- Statistic Category IDS
 WOD_DUNGEON_CATEGORY = 15233
 
 Chitchat.WOD_DUNGEON_ZONE_ENCOUNTERS = {
-  ["Auchidoun"] = {["NORMAL"] = 9262, ["HEROIC"] = 9263},
+  ["Auchindoun"] = {["NORMAL"] = 9262, ["HEROIC"] = 9263},
   ["Bloodmaul Slag Mines"] = {["NORMAL"] = 9258, ["HEROIC"] = 9259},
   ["Grimrail Depot"] = {["NORMAL"] = 9268, ["HEROIC"] = 9269},
   ["Iron Docks"] = {["NORMAL"] = 9260, ["HEROIC"] = 9261},
@@ -26,14 +16,25 @@ Chitchat.WOD_DUNGEON_ZONE_ENCOUNTERS = {
 Chitchat.encounterUnitId = nil
 Chitchat.encounterUnitTag = nil
 Chitchat.encounterBlizzId = nil
-Chitchat.encounterUnitQueue = {}
-Chitchat.encounterUnitQueueSize = 0
-Chitchat.encounterQueueUpdating = nil
+Chitchat.encounterFrequcenyCheck = 1800
+Chitchat.optionEncounterAutoCreateNote = true
 
-function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId,force)
+function Chitchat:EcounterTimestampExpired(unitTag, timestamp)
+  local personal_note = self:GetNote(unitTag)
+  if personal_note == nil then return false end
+  if personal_note[ENCOUNTERS_TIMESTAMP_KEY] == nil then return false end
+  if timestamp == nil then timestamp = time() end
+  return personal_note[ENCOUNTERS_TIMESTAMP_KEY] + self.encounterFrequcenyCheck < timestamp
+end
+
+function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId, force)
   local personal_note
   local now = time()
-  personal_note = self:GetNote(unitTag)
+  if Chitchat.optionEncounterAutoCreateNote then
+    personal_note = self:FindOrCreatePersonalNote(unitTag)
+  else
+    personal_note = self:GetNote(unitTag)
+  end
   -- Nil check
   if personal_note == nil then
     if unitId == nil then unitId = "nil" end
@@ -42,17 +43,17 @@ function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId,force)
     return
   end
   -- Frequency check
-  if not force and personal_note[ENCOUNTERS_TIMESTAMP_KEY] ~= nil and personal_note[ENCOUNTERS_TIMESTAMP_KEY] + 1800 > now then
+  if not force and self:EcounterTimestampExpired(unitTag,now) then
     return
   end
-  
-  if CanInspect(unitId) and UnitIsVisible(unitId) then
+  if self:Inspectable(unitId) then
     self:Debug("Inspect unit:"..unitId..",tag:"..unitTag)
     self.encounterUnitId = unitId
     self.encounterUnitTag = unitTag
     self.encounterBlizzId = blizzId
     self:RegisterEvent("INSPECT_ACHIEVEMENT_READY", "OnEventInspectAchievementReady")
     SetAchievementComparisonUnit(unitId)
+    if force then personal_note[ENCOUNTERS_KEY] = {} end
   else
     self:Debug("Cannot inspect unit:"..unitId..",tag:"..unitTag)
     self.encounterUnitId = nil
@@ -61,72 +62,8 @@ function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId,force)
   personal_note[ENCOUNTERS_TIMESTAMP_KEY] = now
 end
 
-function Chitchat:ClearEncounterQueue()
-  self.encounterUnitId = nil
-  self.encounterUnitTag = nil
-  self.encounterUnitQueue = {}
-  self.encounterUnitQueueSize = 0
-  self.encounterQueueUpdating = false
-end
-
-function Chitchat:AddToEncounterQueue(unitId,tag)
-  self.encounterUnitQueue[unitId] = tag
-  self.encounterUnitQueueSize = self.encounterUnitQueueSize + 1
-end
-
-function Chitchat:DoEncounterQueue()
-  self:Debug("Do encounter queue.")
-  local unitId, unitTag
-  local personal_note
-  local now = time()
-  unitId, unitTag = next(self.encounterUnitQueue)
-  personal_note = self:GetNote(unitTag)
-  if self.encounterUnitQueue == nil or unitId == nil or unitTag == nil then 
-    self:Debug("Encounter Queue size:"..self.encounterUnitQueueSize)
-    return
-  end
-  -- Nil check
-  if personal_note == nil then
-    if unitId == nil then unitId = "nil" end
-    if unitTag == nil then unitTag = "nil" end
-    self:Debug("Encounter note nil escape. unitid:"..unitId..", unitTag:"..unitTag)
-    return
-  end
-  -- Frequency check
-  if personal_note[ENCOUNTERS_TIMESTAMP_KEY] ~= nil and personal_note[ENCOUNTERS_TIMESTAMP_KEY] + 3600 < now then
-    self:Debug("Encounter timestamp escape")
-    return
-  end
-  
-  if CanInspect(unitId) and UnitIsVisible(unitId)then
-    self:Debug("Inspect unit:"..unitId..",tag:"..unitTag)
-    self.encounterUnitId = unitId
-    self.encounterUnitTag = unitTag
-    self:RegisterEvent("INSPECT_ACHIEVEMENT_READY", "OnEventInspectAchievementReady")
-    SetAchievementComparisonUnit(unitId)
-  else
-    self:Debug("Cannot inspect unit:"..unitId..",tag:"..unitTag)
-    self.encounterUnitId = nil
-    self.encounterUnitTag = nil
-  end
-  
-  if self.encounterUnitQueueSize > 0 then
-    if not self.encounterQueueUpdating then self.encounterQueueUpdating = true end
-    ChitchatParent:SetScript("OnUpdate",Chitchat_OnUpdate);
-    self:Debug("Encounter Queue starting.")
-  else
-    if self.encounterQueueUpdating then self.encounterQueueUpdating = nil end
-    ChitchatParent:SetScript("OnUpdate",nil);
-    self:Debug("Encounter Queue stopping. Size:"..self.encounterUnitQueueSize)
-  end
-  self.encounterUnitQueue[unitId] = nil
-  self.encounterUnitQueueSize = self.encounterUnitQueueSize - 1
-end
-
-function Chitchat_OnUpdate(self, elapsed)
-  if Chitchat.encounterUnitId == nil and Chitchat.encounterUnitTag == nil then
-    Chitchat:DoEncounterQueue()
-  end
+function Chitchat:Inspectable(unitId)
+  return (CanInspect(unitId) and UnitIsVisible(unitId) and CheckInteractDistance(unitId, 1) and not InCombatLockdown())
 end
 
 function Chitchat:OnEventInspectAchievementReady()
@@ -135,62 +72,55 @@ function Chitchat:OnEventInspectAchievementReady()
     self:Debug("Encounter inspection cannot perform.")
     return 
   end
-  self:Debug("Getting Stats for player:"..self.encounterUnitId)
-  self:AddPlayerStatistics(self.encounterUnitTag, self.encounterBlizzId)
+  if self.encounterBlizzId == nil then
+    self:Debug("Polling all statistics")
+    local i, statisticCount
+    statisticCount = GetCategoryNumAchievements(WOD_DUNGEON_CATEGORY)
+    for i = 1, statisticCount do
+      local bId, _ = GetAchievementInfo(WOD_DUNGEON_CATEGORY,i)
+      self:AddPlayerEncounterStatistic(self.encounterUnitTag, bId)
+    end
+  else
+    self:AddPlayerEncounterStatistic(self.encounterUnitTag, self.encounterBlizzId)
+  end
+  
   self.encounterUnitId = nil
   self.encounterUnitTag = nil
   self.encounterBlizzId = nil
   ClearAchievementComparisonUnit();
 end
 
-function Chitchat:AddSelfStatistics()
-  local i
-  local statisticCount = GetCategoryNumAchievements(WOD_DUNGEON_CATEGORY)
-  local timestamp = time()
-  for i = 1, statisticCount do
-    local blizzId, Name, kills
-    blizzId, Name = GetAchievementInfo(WOD_DUNGEON_CATEGORY, i)
-    kills = tostring(GetStatistic(blizzId))
-    self:AddPlayerEncounter(tostring(blizzId),"Renzu-Crushridge",timestamp,kills)
-    --print(GetStatistic(IDNumber))
-  end
-end
-
-function Chitchat:AddPlayerStatistics(tag, blizzId)
-  local i
-  local timestamp = time()
-  if blizzId == nil then
-    self:Debug("Polling all statistics")
-    local statisticCount = GetCategoryNumAchievements(WOD_DUNGEON_CATEGORY)
-    for i = 1, statisticCount do
-      local Name, kills
-      blizzId, Name = GetAchievementInfo(WOD_DUNGEON_CATEGORY, i)
-      kills = tostring(GetComparisonStatistic(blizzId))
-      self:AddPlayerEncounter(tostring(blizzId),tag,timestamp,kills)
-      --print(GetStatistic(IDNumber))
+-- Gets the count value and adds to encounter table and personal_note link
+function Chitchat:AddPlayerEncounterStatistic(tag, bId)
+  local encounter, count, personal_note
+  -- Nil Checks
+  if tag == nil or bId == nil then return end
+  
+  -- Get personal note first
+  personal_note = self:GetNote(tag)
+  if personal_note == nil then
+    if self.optionEncounterAutoCreateNote then
+      personal_note = self:CreatePersonalNote(tag)
+    else
+      return
     end
-  else
-    kills = tostring(GetComparisonStatistic(blizzId))
-    self:AddPlayerEncounter(tostring(blizzId),tag,timestamp,kills)
   end
-end
-
-function Chitchat:AddPlayerEncounter(blizzId,tag,timestamp,count)
-  if count == nil or count == "--" then return end
-  local boss_encounter = self:GetEncounter(blizzId)
-  
-  if boss_encounter == nil then
-    self:RefreshEncounterTable(WOD_DUNGEON_CATEGORY)
-    boss_encounter = self.encounters[blizzId]
-  end
-    
-  if boss_encounter[tag] == nil then boss_encounter[tag] = {} end
-  --boss_encounter[tag][TIMESTAMP_KEY] = timestamp
-  boss_encounter[tag][COUNT_KEY] = count
-  
-  local personal_note = self:GetNote(tag)
   if personal_note[ENCOUNTERS_KEY] == nil then personal_note[ENCOUNTERS_KEY] = {} end
-  personal_note[ENCOUNTERS_KEY][blizzId] = true
+  
+  -- Get encounter table 
+  encounter = self:GetEncounter(tostring(bId))
+  if encounter == nil then -- First time run, create tables
+    -- TODO move this to a first-time run area
+    self:RefreshEncounterTable(WOD_DUNGEON_CATEGORY)
+    encounter = self.encounters[blizzId]
+    if encounter == nil then return end
+  end
+  if encounter[tag] == nil then encounter[tag] = {} end
+  
+  count = tostring(GetComparisonStatistic(bId)) -- Get Comparison Statistic from supplied Blizzard Id
+  if count == "--" then return end -- Haven't ran the dungeon. Quick escape don't save, waste of space.
+  encounter[tag][COUNT_KEY] = count -- Record Tag count in encounter table
+  personal_note[ENCOUNTERS_KEY][tostring(bId)] = true -- Add link from personal_note to encounter for quick reference
 end
 
 function Chitchat:GetEncounters()
@@ -206,11 +136,6 @@ function Chitchat:GetEncounter(blizzId)
     self:RefreshEncounterTable(WOD_DUNGEON_CATEGORY)
   end
   return encounter
-end
--- Return blizzId
-function Chitchat:GetEncounterLookup(encounter)
-  if self.encounterLookup == nil then self:RefreshEncounterLookupTable() end
-  return self.encounterLookup[encounter]
 end
 
 function Chitchat:GetEncounterDungeonKills(tag,zone)
@@ -229,31 +154,14 @@ function Chitchat:GetEncounterDungeonKills(tag,zone)
   local encounter = tostring(blizzids["NORMAL"])
   if player_encounters[encounter] then
     nk = self:GetEncounter(encounter)[tag][COUNT_KEY]
-    --self:Debug("encounter: "..encounter..",tag:,"..tag.."count:"..nk)
-  else
-    nk = 0
   end
   encounter = tostring(blizzids["HEROIC"])
   if player_encounters[encounter] then
     hk = self:GetEncounter(encounter)[tag][COUNT_KEY]
-    --self:Debug("encounter: "..encounter..",tag:,"..tag.."count:"..hk)
-  else
-    hk = 0
   end
   return nk, hk
 end
 
-function Chitchat:GetEncounterLookupKillCount(zone,encounters,tag)
-  local kills = 0
-  local blizzId = Chitchat:GetEncounterLookup(zone)
-  if blizzId ~= nil then blizzId = blizzId[1] end
-  if encounters[blizzId] then
-    kills = self:GetEncounter(blizzId)[tag][COUNT_KEY]
-  end
-  return kills
-end
-
-          
 -- Updates the BossEncounters to include a category
 function Chitchat:RefreshEncounterTable(category)
   self:Debug("Refreshing Encounter Table")
@@ -265,24 +173,6 @@ function Chitchat:RefreshEncounterTable(category)
     if self:GetEncounter(blizzId) == nil then
       self:CreateBossEncounter(blizzId,name)
     end
-  end
-  self:RefreshEncounterLookupTable()
-end
-
--- [ZoneName][Difficulty] = {blizzId}
--- Hard code this?
-function Chitchat:RefreshEncounterLookupTable()
-  self:Debug("Refreshing EncounterLookup Table")
-  self.encounterLookup = {}
-  for blizzId, encounter in pairs(self:GetEncounters()) do
-    local description, startIndex, endIndex, name
-    description = encounter[DESCRIPTION_KEY]
-    -- Locates the Area in '()'
-    startIndex, endIndex = string.find(description,"%b()")
-    name = string.sub(description,startIndex+1,endIndex-1)
-    -- Locate difficulty Regular, Raid Finder, Normal, Heroic, Mythic
-    if self.encounterLookup[name] == nil then self.encounterLookup[name] = {} end
-    tinsert(self.encounterLookup[name],blizzId)
   end
 end
 

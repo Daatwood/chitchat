@@ -12,7 +12,6 @@
     <Size>
       <AbsDimension x="244" y="46" />
     </Size>
-    <!--NormalFont style="GameFontHighlightLeft"/-->
     <Layers>
       <Layer level="BACKGROUND">
         <Texture file="Interface\PetBattles\PetJournal">
@@ -47,6 +46,7 @@
               </Offset>
             </Anchor>
           </Anchors>
+          <Color r=".75" g=".75" b=".73"/>
         </FontString>
         <FontString name="$parentRole" inherits="GameFontNormal" justifyH="LEFT" parentKey="role" >
           <Size x="30" y="46"/>
@@ -59,129 +59,89 @@
           </Anchors>
         </FontString>
       </Layer>
-      
     </Layers>
+    <HighlightTexture file="Interface\FriendsFrame\UI-FriendsFrame-HighlightBar" alphaMode="ADD"/>
     <Scripts>
       <OnClick>Chitchat:OnClickEntry(self,button,down)</OnClick>
       <OnLoad>self:RegisterForClicks("LeftButtonUp", "RightButtonUp")</OnLoad>
     </Scripts>
   </Button>
 
-  <Frame name="ChitchatFrameTemplate" virtual="true">
+  <Frame name="HaveWeMetFrameTemplate" virtual="true">
+    <Anchors>
+      <Anchor point="TOPLEFT"/>
+      <Anchor point="BOTTOMRIGHT"/>
+    </Anchors>
+    <Layers>
+      <Layer level="BORDER">
+        <FontString inherits="QuestFont_Enormous" text="Have We Met?">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeKey="$parent" x="26" y="-30"/>
+          </Anchors>
+        </FontString>
+        <FontString inherits="GameFontNormalSmall" parentKey="noteCount" text="0 Notes">
+          <Anchors>
+            <Anchor point="BOTTOMRIGHT" relativeKey="$parent" x="-10" y="10"/>
+          </Anchors>
+          <Color r=".75" g=".75" b=".73"/>
+        </FontString>
+      </Layer>
+    </Layers>
     <Frames>
-      <Frame parentKey="LeftInset" useParentLevel="true" inherits="InsetFrameTemplate">
-        <Size x="260" y="496"/>
+      <Frame parentKey="List" name="$parentList">
+        <Size x="700" y="520"/>
         <Anchors>
-          <Anchor point="TOPLEFT" x="12" y="-60" />
-          <Anchor point="BOTTOMLEFT" x="4" y="46" />
+          <Anchor point="TOPRIGHT" x="0" y="-58"/>
         </Anchors>
-      </Frame>
-
-      <Frame parentKey="RightInset" useParentLevel="true" inherits="InsetFrameTemplate">
-        <Anchors>
-          <Anchor point="TOPRIGHT" x="-30" y="-60" />
-          <Anchor point="BOTTOMLEFT" relativeKey="$parent.LeftInset" relativePoint="BOTTOMRIGHT" x="20" y="0"/>
-        </Anchors>
-      </Frame>
-        
-      <EditBox name="ChitchatFrameSearchBox" inherits="SearchBoxTemplate" parentKey="searchBox" letters="40">
-        <Size x="237" y="20"/>
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeKey="ChitchatFrameTemplate.LeftInset" x="15" y="-4"/>
-        </Anchors>
-      </EditBox>
-      
-      <ScrollFrame name="ChitchatFrameScrollBar" inherits="FauxScrollFrameTemplate" hidden="false">
-        <Anchors>
-          <!-- Controls frame entry position -->
-          <Anchor point="TOPLEFT" relativeKey="ChitchatFrameTemplate.LeftInset" x="0" y="-28"/>
-          <!-- Controls frame scrollbar position -->
-          <Anchor point="BOTTOMRIGHT" relativeKey="ChitchatFrameTemplate.LeftInset" x="-4" y="0"/>
-        </Anchors>
+        <Layers>
+          <Layer level="OVERLAY">
+            <FontString parentKey="EmptyNotesText" inherits="GameFontNormalLarge2" justifyH="CENTER">
+              <Size x="324" y="0"/>
+              <Anchors>
+                <Anchor point="CENTER"/>
+              </Anchors>
+              <Color r=".75" g=".75" b=".73"/>
+            </FontString>
+          </Layer>
+        </Layers>
+        <Frames>
+          <ScrollFrame name="$parentListScrollFrame" parentKey="listScroll" inherits="HybridScrollFrameTemplate">
+            <Anchors>
+              <Anchor point="TOPLEFT" x="5" y="-6"/>
+              <Anchor point="BOTTOMRIGHT" x="-3" y="8"/>
+            </Anchors>
+            <Frames>
+              <Slider name="$parentScrollBar" inherits="MinimalHybridScrollBarTemplate" parentKey="scrollBar">
+                <Anchors>
+                  <Anchor point="TOPLEFT" relativePoint="TOPRIGHT" x="-30" y="-15"/>
+                  <Anchor point="BOTTOMLEFT" relativePoint="BOTTOMRIGHT" x="-30" y="12"/>
+                </Anchors>
+                <Scripts>
+                  <OnLoad>
+                    self.trackBG:Show();
+                    self.trackBG:SetVertexColor(0, 0, 0, 0.75);
+                    self.doNotHide = true;
+                  </OnLoad>
+                </Scripts>
+              </Slider>
+            </Frames>
+              <Scripts>
+                <OnVerticalScroll>
+                  Chitchat:HaveWeMetFrameListUpdate()
+                </OnVerticalScroll>
+                <OnMouseWheel>
+                  HybridScrollFrame_OnMouseWheel(self, delta);
+                  Chitchat:HaveWeMetFrameListUpdate()
+                </OnMouseWheel>
+              </Scripts>
+          </ScrollFrame>
+        </Frames>
         <Scripts>
-          <OnVerticalScroll>
-            FauxScrollFrame_OnVerticalScroll(self, offset, 46, Chitchat_OnScrollUpdate);
-          </OnVerticalScroll>
-          <OnShow>
-            Chitchat_OnScrollUpdate()
-          </OnShow>
+          <OnShow>Chitchat:OnShowHaveWeMetFrame(self)</OnShow>
+          <OnHide>Chitchat:OnHideHaveWeMetFrame(self)</OnHide>
         </Scripts>
-      </ScrollFrame>
-
-      <ScrollFrame name="ChitchatFrameNoteScrollFrame" inherits="UIPanelScrollFrameTemplate">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeKey="ChitchatFrameTemplate.RightInset" x="4" y="0"/>
-          <Anchor point="BOTTOMRIGHT" relativeKey="ChitchatFrameTemplate.RightInset" x="-4" y="0"/>
-        </Anchors>
-        <ScrollChild>
-          <SimpleHTML name="ChitchatNote" >
-            <Size>
-              <AbsDimension x="378" y="10"/>
-            </Size>
-            <Scripts>
-              <OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
-              <!--OnHyperlinkClick>ChatFrame_OnHyperlinkShow(self, link, text, button)</OnHyperlinkClick-->
-            </Scripts>
-            <FontString inherits="GameFontHighlightSmall" /> 
-            <FontStringHeader1 inherits="ChitchatFontHeader"/>
-          </SimpleHTML>
-        </ScrollChild>
-      </ScrollFrame>
-        <Button name="ChitchatFrameEntry1" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameScrollBar" relativePoint="TOPLEFT">
-              <Offset>
-                <AbsDimension x="8" y="0"/>
-              </Offset>
-             </Anchor>
-          </Anchors>
-        </Button>
-        <Button name="ChitchatFrameEntry2" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry1" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-        <Button name="ChitchatFrameEntry3" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry2" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-        <Button name="ChitchatFrameEntry4" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry3" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-        <Button name="ChitchatFrameEntry5" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry4" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-        <Button name="ChitchatFrameEntry6" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry5" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-        <Button name="ChitchatFrameEntry7" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry6" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-      <Button name="ChitchatFrameEntry8" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry7" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-      <Button name="ChitchatFrameEntry9" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry8" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-      <Button name="ChitchatFrameEntry10" inherits="ChitchatFrameEntryTemplate">
-          <Anchors>
-            <Anchor point="TOPLEFT" relativeTo="ChitchatFrameEntry9" relativePoint="BOTTOMLEFT"/>
-          </Anchors>
-        </Button>
-      <Frame name="ChitchatFrameDropDown" inherits="UIDropDownMenuTemplate" id="1" hidden="true">
+      </Frame>
+      <Frame name="HaveWeMetDropDown" inherits="UIDropDownMenuTemplate" id="1" hidden="true">
         <Size>
           <AbsDimension x="10" y="10"/>
         </Size>
@@ -194,29 +154,82 @@
         </Anchors>
       </Frame>
     </Frames>
+    <Scripts>
+      <OnLoad>Chitchat:OnLoadHaveWeMetFrame(self)</OnLoad>
+    </Scripts>
   </Frame>
   
-  <Frame name="HaveWeMetFrameTemplate" virtual="true">
-    <Anchors>
-      <Anchor point="TOPLEFT"/>
-      <Anchor point="BOTTOMRIGHT"/>
-    </Anchors>
-    <Layers>
-      <Layer level="ARTWORK">
-        <FontString inherits="GameFontNormal" text="TODO: Note Browser">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeTo="$parent">
-          <Offset>
-            <AbsDimension x="20" y="-30"/>
-          </Offset>
-          </Anchor>
-        </Anchors>
-        </FontString>
+	<Button name="HaveWeMetPersonalNoteTemplate" virtual="true">
+		<Size x="658" y="47"/>
+		<Layers>
+      <Layer level="BACKGROUND">
+        <Texture file="Interface\PetBattles\PetJournal">
+          <TexCoords left="0.49804688" right="0.90625000" top="0.12792969" bottom="0.17285156"/>  
+        </Texture>
       </Layer>
-    </Layers>
-    <Frames>
-    </Frames> 
-  </Frame>
+			<Layer level="ARTWORK">
+        <!-- CHANGE TO CLASS ICON -->
+        <Texture parentKey="ClassIcon">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="12" y="-4"/>
+					</Anchors>
+				</Texture>
+        <!-- CHANGE TO PLAYER TAG -->
+				<FontString parentKey="PlayerTag" inherits="GameFontHighlightLarge" justifyH="LEFT">
+					<Size x="258" y="15"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="63" y="-8"/>
+					</Anchors>
+          <Color r="1.0" g="0.82" b="0"/>
+				</FontString>
+        <!-- CHANGE TO NOTE -->
+				<FontString parentKey="Note" inherits="GameFontNormal" justifyH="LEFT">
+					<Size x="258" y="25"/>
+					<Anchors>
+						<Anchor point="BOTTOMLEFT" x="63" y="0"/>
+					</Anchors>
+          <Color r=".75" g=".75" b=".73"/>
+					<!--Color r="0.792" g="0.690" b="0.529" a="1"/-->
+				</FontString>
+				<FontString parentKey="Rating" inherits="QuestFont_Enormous" justifyH="Right">
+					<Size x="40" y="25"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="480" y="-8"/>
+					</Anchors>
+				</FontString>        
+        <!-- CHANGE TO TANK ICON -->
+        <Texture parentKey="TankIcon" file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="false" alpha="0.25">
+          <Size x="40" y="40"/>
+          <TexCoords left="0" right="0.2617" top="0.2617" bottom="0.5234"/>
+          <Anchors>
+						<Anchor point="TOPLEFT" x="530" y="-4"/>
+					</Anchors>
+				</Texture>
+        <!-- CHANGE TO HEALER ICON -->
+        <Texture parentKey="HealerIcon" file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="false" alpha="0.25">
+					<Size x="40" y="40"/>
+          <TexCoords left="0.2617" right="0.5234" top="0" bottom="0.2617"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="570" y="-4"/>
+					</Anchors>
+				</Texture>
+        <!-- CHANGE TO DPS ICON -->
+        <Texture parentKey="DamagerIcon" file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="false" alpha="0.25">
+					<Size x="40" y="40"/>
+          <TexCoords left="0.2617" right="0.5234" top="0.2617" bottom="0.5234"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="610" y="-4"/>
+					</Anchors>
+				</Texture>
+			</Layer>
+		</Layers>
+    <HighlightTexture file="Interface\FriendsFrame\UI-FriendsFrame-HighlightBar" alphaMode="ADD"/>
+		<Scripts>
+      <OnLoad>self:RegisterForClicks("LeftButtonUp", "RightButtonUp")</OnLoad>
+			<OnClick>Chitchat:OnClickHaveWeMetEntry(self,button,down)</OnClick>
+		</Scripts>
+	</Button>
   
   <!-- Answering Machine frame -->
   <Frame name="ChitchatParent" toplevel="true" movable="true" parent="UIParent" enableMouse="true" hidden="true">
@@ -240,6 +253,11 @@
       </EdgeSize>
     </Backdrop>
     <Frames>
+      <Button parentKey="CloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT" x="-10" y="-10"/>
+				</Anchors>
+			</Button>
       <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Conversations">
         <Anchors>
           <Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="BOTTOMLEFT" x="11" y="6"/>
@@ -271,6 +289,15 @@
           <Anchor point="TOPLEFT"/>
           <Anchor point="BOTTOMRIGHT"/>
         </Anchors>
+        <Layers>
+          <Layer level="BORDER">
+            <FontString inherits="QuestFont_Enormous" text="Conversation Log">
+              <Anchors>
+                <Anchor point="TOPLEFT" relativeKey="$parent" x="26" y="-30"/>
+              </Anchors>
+            </FontString>
+          </Layer>
+        </Layers>
         <Frames>
           <Frame parentKey="LeftInset" useParentLevel="true" inherits="InsetFrameTemplate">
             <Size x="260" y="496"/>
@@ -449,4 +476,127 @@
       </OnMouseUp>
     </Scripts>
    </Frame>
+
+  <Frame name="HaveWeMetNoteFrame" toplevel="true" movable="true" parent="UIParent" enableMouse="true" frameStrata="DIALOG" hidden="true">
+    <Size> 
+      <AbsDimension x="400" y="400"/> 
+    </Size> 
+    <Anchors>
+      <Anchor point="CENTER"/>
+    </Anchors>
+    <Backdrop bgFile="Interface\Tooltips\UI-Tooltip-Background" edgeFile="Interface\Tooltips\UI-Tooltip-Border" tile="true">
+      <BackgroundInsets>
+        <AbsInset left="4" right="4" top="4" bottom="4"/>
+      </BackgroundInsets>
+      <TileSize>
+        <AbsValue val="16"/>
+      </TileSize>
+      <EdgeSize>
+        <AbsValue val="16"/>
+      </EdgeSize>
+      <Color a="1" r="0" g="0" b="0" />
+    </Backdrop>
+    <Frames>
+      <Button parentKey="CloseButton" inherits="UIPanelCloseButton">
+				<Anchors>
+					<Anchor point="TOPRIGHT" x="-10" y="-10"/>
+				</Anchors>
+			</Button>
+      <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Notes">
+        <Anchors>
+          <Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="BOTTOMLEFT" x="11" y="6"/>
+        </Anchors>
+        <Scripts>
+          <OnClick>
+            PlaySound("UI_Toybox_Tabs");
+          </OnClick>
+        </Scripts>
+      </Button>
+      <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="Encounters">
+        <Anchors>
+          <Anchor point="LEFT" relativeTo="$parentTab1" relativePoint="RIGHT" x="-16" y="0"/>
+        </Anchors>
+        <Scripts>
+          <OnClick>
+            PlaySound("UI_Toybox_Tabs");
+          </OnClick>
+        </Scripts>
+      </Button>
+      <Button parentKey="SaveButton" inherits="OptionsButtonTemplate" text="Save">
+				<Anchors>
+					<Anchor point="BOTTOMRIGHT" relativeKey="$parent" relativePoint="BOTTOMRIGHT" x="-26" y="10"/>
+				</Anchors>
+			</Button>
+      <Slider parentKey="Rating" inherits="OptionsSliderTemplate" minValue="0.0" maxValue="10.0" defaultValue="0.0" valueStep="1.0">
+				<Anchors>
+					<Anchor point="BOTTOM" relativeKey="$parent" relativePoint="BOTTOM" x="0" y="-40"/>
+				</Anchors>
+        <Scripts>
+          <OnValueChanged>
+          </OnValueChanged>
+        </Scripts>
+      </Slider>
+			<EditBox name="NoteBox" letters="255" inherits="InputBoxTemplate" autoFocus="false">
+				<Size x="300" y="20"/>
+				<Anchors>
+					<Anchor point="CENTER" relativeKey="$parent" relativePoint="CENTER" x="0" y="0"/>
+				</Anchors>
+				<Scripts>
+				</Scripts>
+			</EditBox>
+    </Frames>
+    <Layers>
+			<Layer level="ARTWORK">
+        <!-- CHANGE TO HEADER -->
+				<FontString parentKey="Header" inherits="QuestFont_Enormous" justifyH="LEFT" text="Personal Note">
+					<Size x="258" y="15"/>
+					<Anchors>
+						<Anchor point="TOP" relativeKey="$parent" relativePoint="TOP" x="10" y="-30"/>
+					</Anchors>
+          <Color r="1.0" g="0.82" b="0"/>
+				</FontString>
+        <!-- CHANGE TO CLASS ICON -->
+        <Texture parentKey="ClassIcon">
+					<Size x="40" y="40"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" x="12" y="-4"/>
+					</Anchors>
+				</Texture>
+        <!-- CHANGE TO PLAYER TAG -->
+				<FontString parentKey="PlayerTag" inherits="GameFontNormalLarge" justifyH="LEFT" text="PlayerTag">
+					<Size x="258" y="15"/>
+					<Anchors>
+						<Anchor point="BOTTOM" relativeKey="Header" relativePoint="BOTTOM" x="0" y="-40"/>
+					</Anchors>
+				</FontString>
+        <!-- CHANGE TO NOTE -->
+				<FontString parentKey="Note" inherits="GameFontNormal" justifyH="LEFT" text="Note">
+					<Size x="258" y="25"/>
+					<Anchors>
+						<Anchor point="CENTER" relativeKey="$parent" relativePoint="CENTER" x="-20" y="20"/>
+					</Anchors>
+          <Color r=".75" g=".75" b=".73"/>
+					<!--Color r="0.792" g="0.690" b="0.529" a="1"/-->
+				</FontString>
+      </Layer>
+    </Layers>
+    <Scripts>
+       <OnLoad>
+        PanelTemplates_SetNumTabs(self,2);
+        PanelTemplates_SetTab(self, 1)
+      </OnLoad>
+      <OnMouseDown>
+        if button == "LeftButton" and not self.isMoving then
+          self:StartMoving();
+          self.isMoving = true;
+        end
+      </OnMouseDown>
+      <OnMouseUp>
+        if button == "LeftButton" and self.isMoving then
+          self:StopMovingOrSizing();
+          self.isMoving = false;
+        end
+      </OnMouseUp>
+    </Scripts>
+  </Frame>
 </Ui>
