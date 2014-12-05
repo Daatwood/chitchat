@@ -51,13 +51,31 @@
         <FontString name="$parentRole" inherits="GameFontNormal" justifyH="LEFT" parentKey="role" >
           <Size x="30" y="46"/>
           <Anchors>
-            <Anchor point="TOPLEFT">
+            <Anchor point="TOPRIGHT">
               <Offset>
-                <AbsDimension x="2" y="-3"/>
+                <AbsDimension x="12" y="-3"/>
               </Offset>
             </Anchor>
           </Anchors>
         </FontString>
+      </Layer>
+      <Layer level="OVERLAY">
+        <Texture name="$parentUnreadBubble" parentKey="unreadBG" atlas="PetJournal-LevelBubble" useAtlasSize="true">
+          <Anchors>
+            <Anchor point="BOTTOMLEFT" relativeTo="$parent" x="0" y="0"/>
+          </Anchors>
+        </Texture>
+        <FontString name="$parentUnread" inherits="GameFontNormalSmall" parentKey="unread" justifyH="CENTER" text="XX">
+          <Size x="0" y="0"/>
+          <Anchors>
+            <Anchor point="CENTER" relativeTo="$parentUnreadBubble" x="0" y="0"/>
+          </Anchors>
+        </FontString>
+        <Texture name="$parentFavorite" atlas="PetJournal-FavoritesIcon" useAtlasSize="true" parentKey="favorite">
+          <Anchors>
+            <Anchor point="TOPLEFT" relativeTo="$parent" x="0" y="0"/>
+          </Anchors>
+        </Texture>
       </Layer>
     </Layers>
     <HighlightTexture file="Interface\FriendsFrame\UI-FriendsFrame-HighlightBar" alphaMode="ADD"/>
@@ -319,6 +337,11 @@
             <Anchors>
               <Anchor point="TOPLEFT" relativeKey="$parent.LeftInset" x="15" y="-4"/>
             </Anchors>
+            <Scripts>
+              <OnTextChanged>
+                Chitchat:OnSearchTextChanged(self)
+              </OnTextChanged>
+            </Scripts>
           </EditBox>
     
           <ScrollFrame name="ChitchatFrameScrollBar" inherits="FauxScrollFrameTemplate" hidden="true">
@@ -357,6 +380,20 @@
               </SimpleHTML>
             </ScrollChild>
           </ScrollFrame>
+          <EditBox name="ChitchatNoteEditBox" letters="255" inherits="InputBoxTemplate" autoFocus="false">
+            <Size x="380" y="20"/>
+            <Anchors>
+              <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" relativePoint="BOTTOMLEFT" x="4" y="0"/>
+            </Anchors>
+            <Scripts>
+              <OnEnterPressed>
+                Chitchat_OnNoteEditBoxEnterPressed(self)
+              </OnEnterPressed>
+              <OnEscapePressed>
+                Chitchat_OnNoteEditBoxEscapePressed(self)
+              </OnEscapePressed>
+            </Scripts>
+          </EditBox>
           <Button name="ChitchatFrameEntry1" inherits="ChitchatFrameEntryTemplate">
             <Anchors>
               <Anchor point="TOPLEFT" relativeTo="ChitchatFrameScrollBar" relativePoint="TOPLEFT">
