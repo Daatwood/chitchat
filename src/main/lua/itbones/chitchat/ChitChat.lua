@@ -314,6 +314,8 @@ function Chitchat:OnTooltipSetUnit(tooltip, ...)
   --if self.db.global.tooltipNotes == false then return end
   local name, unitid = tooltip:GetUnit()
   local tag, note, rating,seen,personal_note,encounter
+  local showExpandedTooltip = IsShiftKeyDown()
+  local inInstance, instanceType = IsInInstance()
 
 -- If the unit exists and is a player then check if there is a note for it.
   if UnitExists(unitid) and UnitIsPlayer(unitid) then
@@ -328,16 +330,12 @@ function Chitchat:OnTooltipSetUnit(tooltip, ...)
       note = personal_note[NOTE_KEY]
       encounter = personal_note[ENCOUNTERS_KEY]
       seen = personal_note[SEEN_KEY]
-      --if note:len() > 40 then note = note:sub(1,40).."..." end
       if type(rating) == "number" and rating > 0  then tooltip:AddLine(tooltipNoteFormat:format("Rated ", rating),1, 1, 1, false) end
       if note ~= nil and note ~= "" then tooltip:AddLine(tooltipNoteFormat:format("Note:",note),1, 1, 1, true) end
-      if seen ~= nil then tooltip:AddLine(tooltipNoteFormat:format("Last Seen:",date("%m/%d/%y %H:%M:%S", seen[#personal_note[SEEN_KEY]])),1,1,1,false) end
-      local showExpandedTooltip = IsShiftKeyDown()
-      local inInstance, instanceType = IsInInstance()
-      if personal_note[ENCOUNTERS_TIMESTAMP_KEY] ~= nil and personal_note[ENCOUNTERS_TIMESTAMP_KEY] + self.encounterFrequcenyCheck < time() then
-        personal_note[ENCOUNTERS_KEY] = {}
-        encounter = nil
-      end
+      TooltipHaveWeMetLastSeen(tooltip,seen)
+      -- TODO: CONFIG CHECK AUTO ENCOUNTER INSPECT (OUTDATED,ALWAYS,NEVER)
+      --Chitchat:DoEncounterInspect(unitid, tag, nil, false)
+      
       if encounter ~= nil then
         tooltip:AddLine(tooltipNoteFormat:format("Encounters",date("%m/%d/%y %H:%M:%S", personal_note[ENCOUNTERS_TIMESTAMP_KEY])),1,1,1,false)
         if inInstance then
@@ -347,15 +345,10 @@ function Chitchat:OnTooltipSetUnit(tooltip, ...)
           if instanceType == "party" then
             local instances = { name }
             if showExpandedTooltip then instances = self.WOD_DUNGEON_ZONES end
-            local i, zone, nk, hk
-            for i, zone in ipairs(instances) do
-              nk, hk = Chitchat:GetEncounterDungeonKills(tag,zone)
-              tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
-            end
-          -- Shift shows all current raid bosses and kills
+            TooltipDungeonExpanded(tooltip,tag, instances)
           elseif instanceType == "raid" then
             local instances = { name }
-            if showExpandedTooltip then instances = self.WOD_DUNGEON_ZONES end
+            if showExpandedTooltip then instances = self.WOD_RAID_ZONES end
             local i, zone, nk, hk
             for i, zone in ipairs(instances) do
               nk, hk = Chitchat:GetEncounterDungeonKills(tag,zone)
@@ -367,23 +360,19 @@ function Chitchat:OnTooltipSetUnit(tooltip, ...)
           if showExpandedTooltip then
             TooltipDungeonExpanded(tooltip,tag, Chitchat.WOD_DUNGEON_ZONES)
             --TooltipRaidCondensed(tooltip,tag,Chitchat.WOD_RAID_ZONES)
-            -- local instances = self.WOD_DUNGEON_ZONES
-            -- local i, zone, nk, hk
-            -- for i, zone in ipairs(instances) do
-              -- nk, hk = Chitchat:GetEncounterDungeonKills(tag,zone)
-              -- tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
-            -- end
-          -- Show World Tooltip
           end
         end
-      -- elseif personal_note[ENCOUNTERS_TIMESTAMP_KEY] ~= nil then
-        -- tooltip:AddLine(tooltipNoteFormat:format("Encounters:","None"),1, 1, 1, false)
-      elseif inInstance or showExpandedTooltip then
-        --Chitchat:DoEncounterInspect(unitid, tag, nil, false)
-        tooltip:AddLine(tooltipNoteFormat:format("Encounters:","Loading..."),1, 1, 1, false)
+      elseif showExpandedTooltip then
+        tooltip:AddLine(tooltipNoteFormat:format("Encounters: ","None found."),1, 1, 1, false)
       end
     end
   end
+end
+
+function TooltipHaveWeMetLastSeen(tooltip, seen_notes)
+  if seen_notes == nil then return end
+  tooltip:AddLine(tooltipNoteFormat:format("Last Seen:",''),1,1,1,false)
+  tooltip:AddLine(tooltipNoteFormat:format(" ",date("%m/%d/%y %H:%M:%S", seen_notes[#seen_notes])),1,1,1,false)
 end
 
 function TooltipDungeonExpanded(tooltip, tag, instances)
@@ -402,7 +391,7 @@ end
 function TooltipRaidShort(tooltip, tag, instances)
   local i, zone, rk, nk, hk, mk
   for i, zone in ipairs(instances) do
-    rk, nk, hk, mk = Chitchat:GetEncounterRaidKills(tag,zone)
+    bosses = Chitchat:GetEncounterRaidBossKills(tag,zone,difficulty)
     tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
   end
 end
@@ -503,7 +492,6 @@ function Chitchat:HandleGroupChange()
     valid_players = 1
   end
   for i=1, group_size_max do
-    --local _, _, _, p_level, _, _, _, _, _, _, _, _ = GetRaidRosterInfo(i)
     local unitId = group_type..""..i
     local p_name, p_realm = UnitName(unitId)
     local _, p_class = UnitClass(unitId)

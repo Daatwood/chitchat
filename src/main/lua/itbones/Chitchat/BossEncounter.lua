@@ -27,7 +27,7 @@ function Chitchat:EcounterTimestampExpired(unitTag, timestamp)
   return personal_note[ENCOUNTERS_TIMESTAMP_KEY] + self.encounterFrequcenyCheck < timestamp
 end
 
-function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId, force)
+function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId, forceUpdate)
   local personal_note
   local now = time()
   if Chitchat.optionEncounterAutoCreateNote then
@@ -42,9 +42,9 @@ function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId, force)
     self:Debug("Encounter note nil escape. unitid:"..unitId..", unitTag:"..unitTag)
     return
   end
-  -- Frequency check
-  if not force and self:EcounterTimestampExpired(unitTag,now) then
-    return
+  -- Frequency check 
+  if self:EcounterTimestampExpired(unitTag,now) then
+    if not forceUpdate then return end
   end
   if self:Inspectable(unitId) then
     self:Debug("Inspect unit:"..unitId..",tag:"..unitTag)
@@ -53,7 +53,6 @@ function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId, force)
     self.encounterBlizzId = blizzId
     self:RegisterEvent("INSPECT_ACHIEVEMENT_READY", "OnEventInspectAchievementReady")
     SetAchievementComparisonUnit(unitId)
-    if force then personal_note[ENCOUNTERS_KEY] = {} end
   else
     self:Debug("Cannot inspect unit:"..unitId..",tag:"..unitTag)
     self.encounterUnitId = nil

@@ -148,11 +148,9 @@ function Chitchat:ShowWhispers(log_tag)
         text = text..""..message
         message = ""
       else
-        self:Print("Unable to locate whisper "..value.." for "..log_tag)
+        self:Debug("Unable to locate whisper "..value.." for "..log_tag)
       end
     end
-  else
-    self:Print("Unable to locate whisper log for "..log_tag)
   end
   ChitchatNote:SetText(text.."<br/><br/></body></html>")
 end
