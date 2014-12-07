@@ -15,13 +15,13 @@ function Chitchat:AddMessage(message)
   while self.messages[i] ~= nil do
     i = i + 1
   end
-  message[ID_KEY] = i
+  message[self.ID_KEY] = i
   self.messages[tostring(i)] = message
-  self.messages[INDEX_KEY] = i + 1
+  self.messages[self.INDEX_KEY] = i + 1
   return message
 end
 function Chitchat:GetMessageIndex()
-  return self.messages[INDEX_KEY]
+  return self.messages[self.INDEX_KEY]
 end
 
 function Chitchat:CreateMessageEntry(player, message, timestamp, incoming)
@@ -50,11 +50,11 @@ function Chitchat:CreateMessageEntry(player, message, timestamp, incoming)
   message = message:gsub(">", "&gt;")
   message = message:gsub("&", "&amp;")
 
-  message_entry[SENDER_KEY] = player
-  message_entry[MESSAGE_KEY] = message
-  message_entry[TIMESTAMP_KEY] = timestamp
-  message_entry[INCOMING_KEY] = incoming
+  message_entry[self.SENDER_KEY] = player
+  message_entry[self.MESSAGE_KEY] = message
+  message_entry[self.TIMESTAMP_KEY] = timestamp
+  message_entry[self.INCOMING_KEY] = incoming
   self:AddMessage(message_entry)
-  self:SendMessage("CHITCHAT_MESSAGE_CREATED", message_entry[ID_KEY])
+  self:SendMessage("CHITCHAT_MESSAGE_CREATED", message_entry[self.ID_KEY])
   return message_entry
 end

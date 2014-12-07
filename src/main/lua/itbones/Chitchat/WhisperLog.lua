@@ -42,12 +42,12 @@ function Chitchat:DeleteWhisperLog(tag,onlyDeleteMessages)
   local whisper_log = Chitchat:GetLog(tag)
   if whisper_log ~= nil then
     if whisper_log["tag"] == tag then
-      if whisper_log[MESSAGES_KEY] ~= nil then
+      if whisper_log[self.MESSAGES_KEY] ~= nil then
         -- Delete messages so they are not orphans
-        for index, value in ipairs(whisper_log[MESSAGES_KEY]) do
+        for index, value in ipairs(whisper_log[self.MESSAGES_KEY]) do
           self.messages[tostring(value)] = nil
         end
-        whisper_log[MESSAGES_KEY] = nil
+        whisper_log[self.MESSAGES_KEY] = nil
         self:Debug("Deleted all recorded messages.")
       end
       if not onlyDeleteMessages then
@@ -77,11 +77,11 @@ function Chitchat:CreateWhisperLog(tag)
     error(("CreateWhisperLog: 'tag' - '%s' already exists"):format(tag),2)
   end
   
-  whisper_log[TAG_KEY] = tag
-  whisper_log[MESSAGES_KEY] = {}
-  whisper_log[UNREAD_KEY] = 0
-  whisper_log[HIDE_CHAT_KEY] = false
-  self:SendMessage("CHITCHAT_MESSAGE_CREATED", whisper_log[TAG_KEY])
-  self:Debug("Created Log for "..whisper_log[TAG_KEY])
+  whisper_log[self.TAG_KEY] = tag
+  whisper_log[self.MESSAGES_KEY] = {}
+  whisper_log[self.UNREAD_KEY] = 0
+  whisper_log[self.HIDE_CHAT_KEY] = false
+  self:SendMessage("CHITCHAT_MESSAGE_CREATED", whisper_log[self.TAG_KEY])
+  self:Debug("Created Log for "..whisper_log[self.TAG_KEY])
   return self:AddLog(tag, whisper_log)
 end

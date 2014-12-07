@@ -1,71 +1,68 @@
 Chitchat = LibStub("AceAddon-3.0"):NewAddon("Chitchat", "AceConsole-3.0","AceEvent-3.0", "AceHook-3.0")
 
 Chitchat.editNoteFrame = nil
+-- Whisper Log
+Chitchat.INDEX_KEY = "index"
+Chitchat.SENDER_KEY = "sender"
+Chitchat.MESSAGE_KEY = "message"
+Chitchat.TIMESTAMP_KEY = "timestamp"
+Chitchat.INCOMING_KEY = "incoming"
+Chitchat.ID_KEY = "id"
+Chitchat.HIDE_CHAT_KEY = "quiet"
+Chitchat.FAVORITE_KEY = "favorite"
+-- Message Entry
+Chitchat.TAG_KEY = "tag"
+Chitchat.MESSAGES_KEY = "messages"
+Chitchat.UNREAD_KEY = "unread"
+-- Personal Note
+Chitchat.NOTE_KEY = "note"
+Chitchat.RATING_KEY = "rating"
+Chitchat.ROLE_KEY = "role"
+Chitchat.CLASS_KEY = "playerclass"
+Chitchat.SEEN_KEY = "seen"
+Chitchat.ENCOUNTERS_KEY = "encounters"
+Chitchat.ENCOUNTERS_TIMESTAMP_KEY = "encounter-timestamp"
+-- Encounter
+Chitchat.COUNT_KEY = "count"
+Chitchat.DESCRIPTION_KEY = "descript"
+-- Options
+Chitchat.optionChitchatRecordWhisper = true
+Chitchat.optionChitchatRecordChannels = true
+Chitchat.optionChitchatChannelsToRecord = { ["TRADE"] = true, ["GENERAL"] = true, ["GUIILD"] = true }
+Chitchat.optionChitchatRecordBnetWhisper = true
+Chitchat.optionChitchatAllowQuietMode = true
+Chitchat.optionHaveWeMetAutoRecord = true
+Chitchat.optionHaveWeMetTooltips = true
+Chitchat.optionHaveWeMetTooltipsInCombat = true
+Chitchat.optionHaveWeMetWorldFormat = nil
+Chitchat.optionHaveWeMetWorldExtraFormat = nil
+Chitchat.optionHaveWeMetDungeonFormat = nil
+Chitchat.optionHaveWeMetDungeonExtraFormat = nil
+Chitchat.optionHaveWeMetRaidFormat = nil
+Chitchat.optionHaveWeMetRaidExtraFormat = nil
+Chitchat.optionEncounterRecord = true
+Chitchat.optionEncounterCheckFrequceny = 1800
+Chitchat.optionEncounterAutoCreateNote = true
+Chitchat.optionMenuHooks = {  ["PLAYER"] = true, 
+                              ["TARGET"] = true,
+                              ["PARTY"] = true, 
+                              ["FRIEND"] = true, 
+                              ["FRIEND_OFFLINE"] = true, 
+                              ["RAID_PLAYER"] = true }
+
+UnitPopupButtons["CC_EDIT_NOTE"] = {text = "Have we met?", dist = 0, func = Chitchat.EditNoteDropdown}
+UnitPopupButtons["CC_ENCOUNTER_INSPECT"] = {text = "Get Encounters", dist = 0, func = Chitchat.DropDownEncounterInspect}
 
 local defaultDB = {
   global = {
     silent = false, -- Run quietly in background
     minimap = { hide = false }, -- Minimap Icon display
-    tooltipNotes = false,
     logs = {}, -- WhisperLog
     notes = {}, -- PersonalNote
     encounters = {}, -- Casual Encounters
     messages = {index = 0}, -- MessageEntry
-    channelRecording = false,
-    channelsToRecord = {
-    ["Trade"] = false,
-    ["General"] = false,
-    },
-    recordBNConversation = true,
-    menusToModify = {
-      ["PLAYER"] = true, 
-      ["TARGET"] = true,
-      ["PARTY"] = true, 
-      ["FRIEND"] = true, 
-      ["FRIEND_OFFLINE"] = true, 
-      ["RAID_PLAYER"] = true,
-    },
-    tooltips = {
-      showInCombat = false,
-      worldFormat = {
-        default = nil,
-        expanded = "all",
-      },
-      dungeonFormat = {
-        default = "current",
-        expanded = "all",
-      },
-      raidFormat = {
-        default = "current",
-        expanded = "all",
-      },
-    },
   }
 }
-
-INDEX_KEY = "index"
-SENDER_KEY = "sender"
-MESSAGE_KEY = "message"
-TIMESTAMP_KEY = "timestamp"
-INCOMING_KEY = "incoming"
-ID_KEY = "id"
-HIDE_CHAT_KEY = "quiet"
-FAVORITE_KEY = "favorite"
-
-TAG_KEY = "tag"
-MESSAGES_KEY = "messages"
-UNREAD_KEY = "unread"
-
-NOTE_KEY = "note"
-RATING_KEY = "rating"
-ROLE_KEY = "role"
-CLASS_KEY = "playerclass"
-SEEN_KEY = "seen"
-ENCOUNTERS_KEY = "encounters"
-ENCOUNTERS_TIMESTAMP_KEY = "encounter-timestamp"
-
-COUNT_KEY = "count"
-DESCRIPTION_KEY = "descript"
 
 local GREEN =  "|cff00ff00"
 local YELLOW = "|cffffff00"
@@ -75,132 +72,101 @@ local ORANGE = "|cffff9933"
 local WHITE =  "|cffffffff"
 local tooltipNoteFormat = YELLOW.."%s "..WHITE.."%s".."|r"
 local tooltipNoteDungeonEncounterFormat = YELLOW.."   %s "..WHITE.."%s | "..ORANGE.."%s".."|r"
-
-Chitchat.WOD_DUNGEON_ZONES = {
-  "Auchindoun",
-  "Bloodmaul Slag Mines",
-  "Grimrail Depot",
-  "Iron Docks",
-  "Shadowmoon Burial Grounds",
-  "Skyreach",
-  "The Everbloom",
-  "Upper Blackrock Spire"
-}
-Chitchat.WOD_RAID_ZONES = {
-  "Highmaul"
-}
-
+local tooltipNoteRaidEncounterFormat = YELLOW.."   %s "..GREEN.."(%s) "..WHITE.."%s".."|r"
 local defaultIcon = "Interface\\Icons\\INV_Misc_Book_03.blp"
 local newMessageIcon = "Interface\\Icons\\INV_Misc_Book_04.blp"
 
-Chitchat.inspectGuid = nil
-
-UnitPopupButtons["CC_EDIT_NOTE"] = {text = "Have we met?", dist = 0, func = Chitchat.EditNoteDropdown}
-UnitPopupButtons["CC_ENCOUNTER_INSPECT"] = {text = "Get Encounters", dist = 0, func = Chitchat.EditNoteDropdown}
-
 function Chitchat:OnInitialize()
-  -- Called when the addon is first initalized
-  --self:Debug("OnInitialize: \124TInterface\\Icons\\INV_Misc_EngGizmos_13:12\124t")
   -- Setup slash commands
   self:RegisterChatCommand("chitchat","CommandHandler")
   self:RegisterChatCommand("cc","CommandHandler")
   -- Load saved database
-  initDatabase()
+  Chitchat.db = LibStub("AceDB-3.0"):New("ChitchatDB",defaultDB,true)
+  Chitchat.logs = Chitchat.db.global.logs or {}
+  Chitchat.messages = Chitchat.db.global.messages or {}
+  Chitchat.notes = Chitchat.db.global.notes or {}
+  Chitchat.encounters = Chitchat.db.global.encounters or {}
 
   -- Setup minimap icon
-  initMinimap()
+  Chitchat.minimapIcon = LibStub("LibDataBroker-1.1"):NewDataObject("Chitchat", {
+    type = "data source",
+    text = "CHITCHAT",
+    icon = defaultIcon,
+    OnClick = function (frame, button)
+      Chitchat:ToggleFrame()
+    end,
+    OnTooltipShow = function (tooltip)
+      Chitchat:OnMinimapTooltipShow(tooltip)
+    end
+  })
+  local LDBIcon = LibStub("LibDBIcon-1.0", true)
+  if LDBIcon then
+    LDBIcon:Register("Chitchat", Chitchat.minimapIcon,Chitchat.db.global.minimap)
+  end
 
-  --self:InitializeFrame()
 end
 
 function Chitchat:OnEnable()
-  -- Called when the addon is enabled, just before running
-  self:Debug("OnEnable")
-
   -- Register Events
-  self:RegisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
-  self:RegisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
-  if self.db.global.channelRecording == true then
+  if self.optionChitchatRecordWhisper then
+    self:RegisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
+    self:RegisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
+  end
+  if self.optionChitchatRecordChannels then
     self:RegisterEvent("CHAT_MSG_CHANNEL","OnEventChannelChatMessage")
   end
-  if self.db.global.recordBNConversation == true then
+  if self.optionChitchatRecordBnetWhisper then
     self:RegisterEvent("CHAT_MSG_BN_WHISPER","OnEventBnetWhisperIncoming")
     self:RegisterEvent("CHAT_MSG_BN_WHISPER_INFORM","OnEventBnetWhisperOutgoing")
   end
-  -- if: allow chat bypass filter
-  ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER", Chitchat_FilterWhisperMessages)
-  ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", Chitchat_FilterWhisperMessages)
-  
-  self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnEventGroupRosterUpdate")
-  self:RegisterMessage("CHITCHAT_PLAYER_SEEN","OnPlayerSessionAlert")
-
-  -- Register Hooks
-  -- HaveWeMet Hooks
- 
-  for menu, enabled in pairs(self.db.global.menusToModify) do
+  if self.optionChitchatAllowQuietMode then
+    ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER", Chitchat_FilterWhisperMessages)
+    ChatFrame_AddMessageEventFilter("CHAT_MSG_WHISPER_INFORM", Chitchat_FilterWhisperMessages)
+  end
+  if self.optionHaveWeMetAutoRecord then
+    self:RegisterEvent("GROUP_ROSTER_UPDATE", "OnEventGroupRosterUpdate")
+  end
+  for menu, enabled in pairs(self.optionMenuHooks) do
     if menu and enabled then
       tinsert(UnitPopupMenus[menu], #UnitPopupMenus[menu], "CC_EDIT_NOTE")
       tinsert(UnitPopupMenus[menu], #UnitPopupMenus[menu], "CC_ENCOUNTER_INSPECT")
     end
   end
   self:SecureHook("UnitPopup_ShowMenu")
-  
   self:HookScript(GameTooltip, "OnTooltipSetUnit")
 
   -- Create Frames
+  -- TODO Remove this
   self.editNoteFrame = self:CreateEditNoteFrame()
+end
 
-  -- Finalize Addon
+function Chitchat:OnDisable()
+  -- Halt mod completely, and enter standby mode.
+  if self.optionChitchatRecordWhisper then
+    self:UnregisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
+    self:UnregisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
+  end
+  if self.optionChitchatRecordChannels then
+    self:UnregisterEvent("CHAT_MSG_CHANNEL","OnEventChannelChatMessage")
+  end
+  if self.optionChitchatRecordBnetWhisper then
+    self:UnregisterEvent("CHAT_MSG_BN_WHISPER","OnEventBnetWhisperIncoming")
+    self:UnregisterEvent("CHAT_MSG_BN_WHISPER_INFORM","OnEventBnetWhisperOutgoing")
+  end
+  if self.optionChitchatAllowQuietMode then
+    ChatFrame_RemoveMessageEventFilter("CHAT_MSG_WHISPER", Chitchat_FilterWhisperMessages)
+    ChatFrame_RemoveMessageEventFilter("CHAT_MSG_WHISPER_INFORM", Chitchat_FilterWhisperMessages)
+  end
+  if self.optionHaveWeMetAutoRecord then
+    self:UnregisterEvent("GROUP_ROSTER_UPDATE", "OnEventGroupRosterUpdate")
+  end
 end
 
 function Chitchat:Debug(s, ...)
 	if self.db.global.silent then self:Print(format("[Debug] "..s, ...)) end
 end
 
-function Chitchat:OnDisable()
-  self:Debug("OnDisable")
-  -- Called when the addon is disabled
-
-  -- Halt mod completely, and enter standby mode.
-  self:UnregisterEvent("CHAT_MSG_WHISPER", "OnEventWhisperIncoming")
-  self:UnregisterEvent("CHAT_MSG_WHISPER_INFORM","OnEventWhisperOutgoing")
-end
-
-function initDatabase()
-  Chitchat.db = LibStub("AceDB-3.0"):New("ChitchatDB",defaultDB,true)
-  Chitchat.logs = Chitchat.db.global.logs or {}
-  Chitchat.messages = Chitchat.db.global.messages or {}
-  Chitchat.notes = Chitchat.db.global.notes or {}
-  Chitchat.encounters = Chitchat.db.global.encounters or {}
-end
-function Chitchat:setupMetatable(array, meta, tag_type)
-  for index, value in ipairs(array) do
-    setmetatable(value, meta)
-    if tag_type ~= nil then
-      Chitchat:AddTag(value["tag"],tag_type,value["id"])
-    end
-  end
-end
-
-function initMinimap()
-  Chitchat.iconObject = LibStub("LibDataBroker-1.1"):NewDataObject("Chitchat", {
-    type = "data source",
-    text = "CHITCHAT",
-    icon = defaultIcon,
-    OnClick = function (frame, button)
-      -- TODO Verify not in combat
-      Chitchat:ToggleFrame()
-    end,
-    OnTooltipShow = function (tooltip)
-      Chitchat:OnTooltipShow(tooltip)
-    end
-  })
-  local LDBIcon = LibStub("LibDBIcon-1.0", true)
-  if LDBIcon then
-    LDBIcon:Register("Chitchat", Chitchat.iconObject,Chitchat.db.global.minimap)
-  end
-end
-function Chitchat:OnTooltipShow (tooltip)
+function Chitchat:OnMinimapTooltipShow (tooltip)
   tooltip:AddLine("Chitchat")
 end
 
@@ -217,8 +183,6 @@ function Chitchat:CommandHandler(input)
   elseif cmd == "test" then
     self:Print("Faking a whisper.")
     Chitchat:FakeWhisper(math.random(0,1))
-  elseif cmd == "statupdate" then
-    self:AddSelfStatistics()
 	else
 		self:ToggleFrame()
 	end
@@ -229,12 +193,8 @@ function Chitchat:ToggleFrame()
     HideUIPanel(ChitchatParent)
   else
     ShowUIPanel(ChitchatParent)
-    Chitchat.iconObject.icon = defaultIcon
+    Chitchat.minimapIcon.icon = defaultIcon
   end
-end
-
-function Chitchat:OnPlayerSessionAlert(self, tag)
-  Chitchat:Print("Familiar Player: "..tag)
 end
 
 -- Generate a Fake Whisper for Testing.
@@ -265,11 +225,10 @@ function Chitchat:OnEventWhisperOutgoing(self, message, sender, lang, channelStr
   Chitchat:HandleWhisper(sender, message, time(), 0)
 end
 
--- a filter to hide all yelled messaged containing certain text
+-- Filter to halt whisper messages from on-screen
 function Chitchat_FilterWhisperMessages(self,event,message, sender, ...)
   local whisper_log = Chitchat:GetLog(sender)
-  if whisper_log ~= nil and whisper_log[HIDE_CHAT_KEY] == true then
-    Chitchat:Debug("Ready")
+  if whisper_log ~= nil and whisper_log[self.HIDE_CHAT_KEY] == true then
     return true, "", "", ...
   end
   return false, message, sender, ...
@@ -284,27 +243,27 @@ end
 -- Locates the Entry by looking up the assigned tag.
 -- Create a whisper and add the id to the entries's whisper table.
 function Chitchat:HandleWhisper(tag, message, timestamp, incoming)
-  local message_id = Chitchat:CreateMessageEntry(tag, message, timestamp, incoming)[ID_KEY]
+  local message_entry = Chitchat:CreateMessageEntry(tag, message, timestamp, incoming)[self.ID_KEY]
   local whisper_log = Chitchat:FindOrCreateWhisperLog(tag)
   if whisper_log == nil then
     error("HandleWhisper: Unable to find or create a whisper log.",2)
   end
   
-  tinsert(whisper_log.messages, message_id)
+  tinsert(whisper_log.messages, message_entry)
   if incoming == 1 then
-    whisper_log[UNREAD_KEY] = whisper_log[UNREAD_KEY] + 1
-    Chitchat.iconObject.icon = newMessageIcon
+    whisper_log[self.UNREAD_KEY] = whisper_log[self.UNREAD_KEY] + 1
+    Chitchat.minimapIcon.icon = newMessageIcon
   end
-  self:SendMessage("CHITCHAT_LOG_UPDATED", whisper_log[TAG_KEY], message_id)
+  self:SendMessage("CHITCHAT_LOG_UPDATED", whisper_log[self.TAG_KEY])
 end
 
 function Chitchat:HandleChatMessage(channel,tag,message,timestamp)
-  local message_id = Chitchat:CreateMessageEntry(tag, message, timestamp, 2)[ID_KEY]
+  local message_entry = Chitchat:CreateMessageEntry(tag, message, timestamp, 2)[self.ID_KEY]
   local chat_log = Chitchat:FindOrCreateWhisperLog(channel)
   if chat_log == nil then
     error("HandleChatMessage: Unable to find or create a chat log.",2)
   end
-  tinsert(chat_log.messages, message_id)
+  tinsert(chat_log.messages, message_entry)
 end
 
 ----------------------------------------------------------------------------
@@ -313,92 +272,116 @@ end
 function Chitchat:OnTooltipSetUnit(tooltip, ...)
   --if self.db.global.tooltipNotes == false then return end
   local name, unitid = tooltip:GetUnit()
-  local tag, note, rating,seen,personal_note,encounter
   local showExpandedTooltip = IsShiftKeyDown()
-  local inInstance, instanceType = IsInInstance()
 
 -- If the unit exists and is a player then check if there is a note for it.
   if UnitExists(unitid) and UnitIsPlayer(unitid) then
-    name, realm = UnitName(unitid)
+    local name, realm = UnitName(unitid)
     if realm == nil then
       realm = GetRealmName()
     end
-    tag = name.."-"..realm
-    personal_note = Chitchat:GetNote(tag)
+    local tag = name.."-"..realm
+    local personal_note = Chitchat:GetNote(tag)
     if personal_note ~= nil then
-      rating = personal_note[RATING_KEY]
-      note = personal_note[NOTE_KEY]
-      encounter = personal_note[ENCOUNTERS_KEY]
-      seen = personal_note[SEEN_KEY]
-      if type(rating) == "number" and rating > 0  then tooltip:AddLine(tooltipNoteFormat:format("Rated ", rating),1, 1, 1, false) end
-      if note ~= nil and note ~= "" then tooltip:AddLine(tooltipNoteFormat:format("Note:",note),1, 1, 1, true) end
-      TooltipHaveWeMetLastSeen(tooltip,seen)
-      -- TODO: CONFIG CHECK AUTO ENCOUNTER INSPECT (OUTDATED,ALWAYS,NEVER)
-      --Chitchat:DoEncounterInspect(unitid, tag, nil, false)
+      self:TooltipHaveWeMet(tooltip,personal_note,showExpandedTooltip)
+      self:TooltipEncounters(tooltip,personal_note,showExpandedTooltip)
       
-      if encounter ~= nil then
-        tooltip:AddLine(tooltipNoteFormat:format("Encounters",date("%m/%d/%y %H:%M:%S", personal_note[ENCOUNTERS_TIMESTAMP_KEY])),1,1,1,false)
-        if inInstance then
-          -- get instance info
-          local name, _, _, _, _, _, _, _ =GetInstanceInfo()
-          -- When in Dungeon shift shows all Dungeons/Heroic
-          if instanceType == "party" then
-            local instances = { name }
-            if showExpandedTooltip then instances = self.WOD_DUNGEON_ZONES end
-            TooltipDungeonExpanded(tooltip,tag, instances)
-          elseif instanceType == "raid" then
-            local instances = { name }
-            if showExpandedTooltip then instances = self.WOD_RAID_ZONES end
-            local i, zone, nk, hk
-            for i, zone in ipairs(instances) do
-              nk, hk = Chitchat:GetEncounterDungeonKills(tag,zone)
-              tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
-            end
-          end
-        else
-          -- Show Expanded World Tooltip
-          if showExpandedTooltip then
-            TooltipDungeonExpanded(tooltip,tag, Chitchat.WOD_DUNGEON_ZONES)
-            --TooltipRaidCondensed(tooltip,tag,Chitchat.WOD_RAID_ZONES)
-          end
-        end
-      elseif showExpandedTooltip then
-        tooltip:AddLine(tooltipNoteFormat:format("Encounters: ","None found."),1, 1, 1, false)
+      if self.optionEncounterRecord then
+        Chitchat:DoEncounterInspect(unitid, tag, nil, false)
       end
     end
   end
 end
 
-function TooltipHaveWeMetLastSeen(tooltip, seen_notes)
-  if seen_notes == nil then return end
-  tooltip:AddLine(tooltipNoteFormat:format("Last Seen:",''),1,1,1,false)
-  tooltip:AddLine(tooltipNoteFormat:format(" ",date("%m/%d/%y %H:%M:%S", seen_notes[#seen_notes])),1,1,1,false)
+function Chitchat:TooltipHaveWeMet(tooltip, personal_note, showExpandedTooltip)
+  if personal_note == nil then return end
+  local rating = personal_note[self.RATING_KEY]
+  local note = personal_note[self.NOTE_KEY]
+  local seen = personal_note[self.SEEN_KEY]
+  if type(rating) == "number" and rating > 0  then 
+    tooltip:AddLine(tooltipNoteFormat:format("Rated ", rating),1, 1, 1, false)
+  end
+  if note ~= nil and note ~= "" then
+    if not showExpandedTooltip then
+      note = note
+    end
+    tooltip:AddLine(tooltipNoteFormat:format("Note:", ''),1, 1, 1, true)
+    tooltip:AddLine(tooltipNoteFormat:format("", note),1, 1, 1, true)
+  end
+  if seen ~= nil then
+    tooltip:AddLine(tooltipNoteFormat:format("Last Seen:",#seen),1,1,1,false)
+    tooltip:AddLine(tooltipNoteFormat:format(" ",date("%m/%d/%y %H:%M:%S", seen[#seen])),1,1,1,false)
+  end
 end
 
-function TooltipDungeonExpanded(tooltip, tag, instances)
-  local i, zone, nk, hk
+function Chitchat:TooltipEncounters(tooltip, personal_note, showExpandedTooltip)
+  local inInstance, instanceType = IsInInstance()
+  local encounters = personal_note[self.ENCOUNTERS_KEY]
+  local encounter_timestamp = personal_note[self.ENCOUNTERS_TIMESTAMP_KEY]
+  local tag = personal_note[self.TAG_KEY]
+
+  if encounters == nil then
+    if showExpandedTooltip then
+      tooltip:AddLine(tooltipNoteFormat:format("Encounters: ","None found."),1, 1, 1, false)
+    end
+  end
+  tooltip:AddLine(tooltipNoteFormat:format("Encounters",date("%m/%d/%y %H:%M:%S", encounter_timestamp)),1,1,1,false)
+  if inInstance then
+    local name, _, _, difficulty, _, _, _, _ =GetInstanceInfo() -- Normal Heroic Mythic Raid Finder
+    if instanceType == "party" then
+      local instances = { name }
+      if showExpandedTooltip then instances = self.WOD_DUNGEON_ZONES end
+      self:TooltipEncounterDungeon(tooltip, tag, instances)
+    elseif instanceType == "raid" then
+      local instances = { name }
+      local difficulties = { difficulty }
+      if showExpandedTooltip then 
+        instances = self.WOD_RAID_ZONES 
+        difficulties = { 'Normal', 'Heroic' }
+      end
+      self:TooltipEncounterRaid(tooltip, tag, instance, difficulties)
+    end
+  else
+    if showExpandedTooltip then
+      self:TooltipEncounterDungeon(tooltip, tag, self.WOD_DUNGEON_ZONES)
+      self:TooltipEncounterRaid(tooltip, tag, self.WOD_RAID_ZONES,{'Normal', 'Heroic'})
+    end
+  end
+end
+-- Dungeon Name [N|H]
+function Chitchat:TooltipEncounterDungeon(tooltip, tag, instances)
+  local i, zone
+  tooltip:AddLine(tooltipNoteFormat:format('Dungeons',''),1, 1, 1, false)
   for i, zone in ipairs(instances) do
-    nk, hk = Chitchat:GetEncounterDungeonKills(tag,zone)
+    local nk, hk = self:GetEncounterDungeonKills(tag,zone)
     tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
   end
 end
 -- Raid Name (Difficulty) [9|8|7|6|5|4|3|2|1]
-function TooltipRaidExpanded(tooltip, tag, instances)
-  
-end
-
--- Raid Name [9M|8H|7N|6N|5N|4N|3R|2N|1R]
-function TooltipRaidShort(tooltip, tag, instances)
-  local i, zone, rk, nk, hk, mk
+function Chitchat:TooltipEncounterRaid(tooltip, tag, instances, difficulties)
+  local i, zone, doesRaiding
+  tooltip:AddLine(tooltipNoteFormat:format('Raids',''),1, 1, 1, false)
   for i, zone in ipairs(instances) do
-    bosses = Chitchat:GetEncounterRaidBossKills(tag,zone,difficulty)
-    tooltip:AddLine(tooltipNoteDungeonEncounterFormat:format(zone,nk,hk),1, 1, 1, false)
+    for i, difficulty in ipairs(difficulties) do
+      local kills, valid = self:GetEncounterRaidKills(tag, zone, difficulty)
+      if valid then
+        doesRaiding = true
+        local kill_string = "["
+        for i, kill in ipairs(kills) do
+          kill_string = kill_string..tostring(kill)
+          if i == #kills then
+            kill_string = kill_string.."]"
+          else
+            kill_string = kill_string.."/"
+          end
+        end
+        tooltip:AddLine(tooltipNoteRaidEncounterFormat:format(zone, difficulty, kill_string),1, 1, 1, false)
+      end
+    end
   end
-end
-
--- Raid Name (Difficulty): 11/14 or Cleared
-function TooltipRaidSimple(tooltip, tag, instances)
-  
+  if not doesRaiding then
+    tooltip:AddLine(tooltipNoteFormat:format('','None found.'),1, 1, 1, false)
+  end
 end
 
 function Chitchat:GetEncountersFromTarget()
@@ -457,8 +440,8 @@ function Chitchat:EditNoteHandler(input)
     local note = ""
     local rating = 0
     if personal_note ~= nil then
-      note = personal_note[NOTE_KEY]
-      rating = personal_note[RATING_KEY]
+      note = personal_note[self.NOTE_KEY]
+      rating = personal_note[self.RATING_KEY]
       if type(rating) ~= "number" then rating = 0 end
     end
     local frame = Chitchat.editNoteFrame

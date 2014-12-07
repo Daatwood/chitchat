@@ -1,0 +1,14 @@
+core.lua - Publicly Visible functions
+events.lua - Event related functions
+options.lua - Option and Constants
+test.lua - Test related functions
+helper.lua - Helper functions
+models/model.lua - Shared Model functions
+models/whisper_log.lua 
+models/message_entry.lua
+models/personal_note.lua
+frames/chitchat_frame.xml
+frames/chitchat_frame.lua
+frames/havewemet_frame.xml
+frames/havewemet_frame.lua
+

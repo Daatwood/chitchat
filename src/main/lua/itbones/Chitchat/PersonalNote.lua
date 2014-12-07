@@ -32,28 +32,28 @@ function Chitchat:UpdatePersonalNote(tag,note,rating,role,klass)
   end
   -- Frequency check
   local now = time()
-  if personal_note[TIMESTAMP_KEY] ~= nil and personal_note[TIMESTAMP_KEY] + 3600 < now then
+  if personal_note[self.TIMESTAMP_KEY] ~= nil and personal_note[self.TIMESTAMP_KEY] + 3600 < now then
     return
   end
   local updated = false
   if rating ~= nil then
-    personal_note[RATING_KEY] = rating
+    personal_note[self.RATING_KEY] = rating
     updated = true
   end
   if note ~= nil then
-    personal_note[NOTE_KEY] = note
+    personal_note[self.NOTE_KEY] = note
     updated = true
   end
   if role ~= nil then
-    personal_note[ROLE_KEY] = self:PersonalNoteAddRole(personal_note[ROLE_KEY], role)
+    personal_note[self.ROLE_KEY] = self:PersonalNoteAddRole(personal_note[self.ROLE_KEY], role)
     updated = true
   end
   if klass ~= nil then
-    personal_note[CLASS_KEY] = klass
+    personal_note[self.CLASS_KEY] = klass
     updated = true
   end
   if updated then 
-    personal_note[TIMESTAMP_KEY] = now
+    personal_note[self.TIMESTAMP_KEY] = now
     self:SendMessage("CHITCHAT_NOTE_UPDATED", tag, personal_note.id)
   end
 end
@@ -65,9 +65,9 @@ function Chitchat:FindOrCreatePersonalNote(tag)
   if personal_note ~= nil then 
     -- Mark player as Seen.
     if self:MarkAsSeen(tag) then
-      if personal_note[SEEN_KEY] == nil then personal_note[SEEN_KEY] = {} end
-      tinsert(personal_note[SEEN_KEY],time())
-      self:SendMessage("CHITCHAT_PLAYER_SEEN", personal_note[TAG_KEY])
+      if personal_note[self.SEEN_KEY] == nil then personal_note[self.SEEN_KEY] = {} end
+      tinsert(personal_note[self.SEEN_KEY],time())
+      self:SendMessage("CHITCHAT_PLAYER_SEEN", personal_note[self.TAG_KEY])
       Chitchat:Debug("Found familiar: "..tag)
     end
     return personal_note
@@ -86,16 +86,16 @@ function Chitchat:CreatePersonalNote(tag)
     error(("CreatePersonalNote: 'tag' - '%s' already exists"):format(tag),2)
   end
   
-  personal_note[TAG_KEY] = tag
-  personal_note[NOTE_KEY] = ""
-  personal_note[RATING_KEY] = 0
-  personal_note[ROLE_KEY] = 0
-  personal_note[CLASS_KEY] = ""
-  personal_note[SEEN_KEY] = {}
-  self:SendMessage("CHITCHAT_NOTE_CREATED", personal_note[TAG_KEY])
-  self:Debug("Created Note for "..personal_note[TAG_KEY])
+  personal_note[self.TAG_KEY] = tag
+  personal_note[self.NOTE_KEY] = ""
+  personal_note[self.RATING_KEY] = 0
+  personal_note[self.ROLE_KEY] = 0
+  personal_note[self.CLASS_KEY] = ""
+  personal_note[self.SEEN_KEY] = {}
+  self:SendMessage("CHITCHAT_NOTE_CREATED", personal_note[self.TAG_KEY])
+  self:Debug("Created Note for "..personal_note[self.TAG_KEY])
   self:MarkAsSeen(tag)
-  tinsert(personal_note[SEEN_KEY],time())
+  tinsert(personal_note[self.SEEN_KEY],time())
   return self:AddNote(tag, personal_note)
 end
 -- Accepts current Roles as number and new role as string.
@@ -128,11 +128,3 @@ function Chitchat:GetRoleInt(tank,healer,dps)
   if dps ~= nil then r = r + 1 end
   return r
 end
-
-
--- function PersonalNote:GetPlayerClass()
-  -- return self.klass or ""
--- end
--- function PersonalNote:SetPlayerClass(newClass)
-  -- self.klass = newClass
--- end

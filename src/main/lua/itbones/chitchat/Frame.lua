@@ -66,7 +66,7 @@ function OnClickDropDownItem(self)
   elseif action == "QUITE_MODE" then
     Chitchat:WhisperLogSet(Chitchat.menuItemID, "quiet", not self.checked)
   elseif action == "FAVORITE" then
-    Chitchat:WhisperLogSet(Chitchat.menuItemID, FAVORITE_KEY, not self.checked)
+    Chitchat:WhisperLogSet(Chitchat.menuItemID, self.FAVORITE_KEY, not self.checked)
   elseif action == "DELETE_LOG" then
     Chitchat:DeleteWhisperLog(Chitchat.menuItemID, false)
   elseif action == "DELETE_MESSAGES" then
@@ -125,26 +125,26 @@ function Chitchat:ShowWhispers(log_tag)
   local currentTime
   local displayDate = ""
   local conversation = self:GetLog(log_tag)
-  if conversation ~= nil and conversation[MESSAGES_KEY] ~= nil then
+  if conversation ~= nil and conversation[self.MESSAGES_KEY] ~= nil then
     Chitchat.highlightedTag = log_tag
-    conversation[UNREAD_KEY] = 0
-    for index, value in ipairs(conversation[MESSAGES_KEY]) do
+    conversation[self.UNREAD_KEY] = 0
+    for index, value in ipairs(conversation[self.MESSAGES_KEY]) do
       whisper = Chitchat:GetMessage(tostring(value))
       if whisper ~= nil then
-        if whisper[INCOMING_KEY] == 1 then
+        if whisper[self.INCOMING_KEY] == 1 then
           color = "ffDA81F5"
           alignment = "left"
         else
           color = "ffffffff"
           alignment = "right"
         end
-        currentDate = FormatDate(whisper[TIMESTAMP_KEY])
-        currentTime = FormatTime(whisper[TIMESTAMP_KEY])
+        currentDate = FormatDate(whisper[self.TIMESTAMP_KEY])
+        currentTime = FormatTime(whisper[self.TIMESTAMP_KEY])
         if displayDate ~= currentDate then
           displayDate = currentDate
           message = "<br/><p align='center'>"..displayDate.."</p>"
         end
-        message = message.."<p>|cFFA9A9A9["..currentTime.."]|r|c"..color.."["..whisper[SENDER_KEY].."]: "..whisper[MESSAGE_KEY].."|r</p> "
+        message = message.."<p>|cFFA9A9A9["..currentTime.."]|r|c"..color.."["..whisper[self.SENDER_KEY].."]: "..whisper[self.MESSAGE_KEY].."|r</p> "
         text = text..""..message
         message = ""
       else
@@ -199,11 +199,11 @@ function Chitchat:OnScrollUpdate()
       local class_texture = nil
       if conversation ~= nil then
         display = conversation["tag"]
-        local pnote = self:GetNote(conversation[TAG_KEY])
+        local pnote = self:GetNote(conversation[self.TAG_KEY])
         if pnote ~= nil then
-          class_texture = CLASS_ICON_TCOORDS[pnote[CLASS_KEY]]
-          tagged_note = pnote[NOTE_KEY]
-          local roles = pnote[ROLE_KEY]
+          class_texture = CLASS_ICON_TCOORDS[pnote[self.CLASS_KEY]]
+          tagged_note = pnote[self.NOTE_KEY]
+          local roles = pnote[self.ROLE_KEY]
           if self:IsTankRole(roles) then
             roles_note = roles_note..""..INLINE_TANK_ICON
           end
@@ -216,15 +216,15 @@ function Chitchat:OnScrollUpdate()
         end
       end
       
-      if conversation[FAVORITE_KEY] then
+      if conversation[self.FAVORITE_KEY] then
         button.favorite:Show()
       else
         button.favorite:Hide()
       end
       
-      if conversation[UNREAD_KEY] ~= nil and conversation[UNREAD_KEY] > 0 then
+      if conversation[self.UNREAD_KEY] ~= nil and conversation[self.UNREAD_KEY] > 0 then
         button.unreadBG:Show()
-        button.unread:SetText(conversation[UNREAD_KEY])
+        button.unread:SetText(conversation[self.UNREAD_KEY])
       else
         button.unreadBG:Hide()
         button.unread:SetText('')
@@ -286,11 +286,11 @@ function Chitchat:GetOrderedLogList()
   self.sortVal = {};
   for key, value in pairs(logs) do
     local i = #self.cachedLogs + 1
-    local isUnread = value[UNREAD_KEY] > 0
-    local tag = value[TAG_KEY]
+    local isUnread = value[self.UNREAD_KEY] > 0
+    local tag = value[self.TAG_KEY]
     if self:WhisperLogMatchersFilter(tag) then
       self.cachedLogs[i] = tag
-      self.sortVal[tag] = Chitchat_GetWhisperLogSortVal(value[FAVORITE_KEY], isUnread)
+      self.sortVal[tag] = Chitchat_GetWhisperLogSortVal(value[self.FAVORITE_KEY], isUnread)
     end
   end
   
@@ -417,8 +417,8 @@ function Chitchat:HaveWeMetFrameListUpdate()
     end
     if personal_note ~= nil then
       -- Setup Personal Note stuff HERE!!!!
-      local class_texture = CLASS_ICON_TCOORDS[personal_note[CLASS_KEY]]
-      local rating = personal_note[RATING_KEY]
+      local class_texture = CLASS_ICON_TCOORDS[personal_note[self.CLASS_KEY]]
+      local rating = personal_note[self.RATING_KEY]
       if class_texture then
         button.ClassIcon:Show()
         button.ClassIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
@@ -427,17 +427,17 @@ function Chitchat:HaveWeMetFrameListUpdate()
         button.ClassIcon:Hide()
       end
       
-      if self:IsTankRole(personal_note[ROLE_KEY]) then
+      if self:IsTankRole(personal_note[self.ROLE_KEY]) then
         button.TankIcon:SetAlpha(1.0)
       else
         button.TankIcon:SetAlpha(0.25)
       end
-      if self:IsHealerRole(personal_note[ROLE_KEY]) then
+      if self:IsHealerRole(personal_note[self.ROLE_KEY]) then
         button.HealerIcon:SetAlpha(1.0)
       else
         button.HealerIcon:SetAlpha(0.25)
       end
-      if self:IsDamagerRole(personal_note[ROLE_KEY]) then
+      if self:IsDamagerRole(personal_note[self.ROLE_KEY]) then
         button.DamagerIcon:SetAlpha(1.0)
       else
         button.DamagerIcon:SetAlpha(0.25)
@@ -451,13 +451,13 @@ function Chitchat:HaveWeMetFrameListUpdate()
         elseif rating > 0 then
           button.Rating:SetTextColor(0.9,0.0,0.0)
         end
-        button.Rating:SetText(personal_note[RATING_KEY])
+        button.Rating:SetText(personal_note[self.RATING_KEY])
         button.Rating:Show()
       else
         button.Rating:Hide()
       end
-      button.PlayerTag:SetText(personal_note[TAG_KEY])
-      button.Note:SetText(personal_note[NOTE_KEY])
+      button.PlayerTag:SetText(personal_note[self.TAG_KEY])
+      button.Note:SetText(personal_note[self.NOTE_KEY])
       
       button:Show()
     else
@@ -481,10 +481,10 @@ function Chitchat:GetOrderedNoteList(cache)
   --self.cachedNotes = {}
   self.sortVal = {};
   for key, value in pairs(notes) do
-    self.cachedNotes[#self.cachedNotes + 1] = value[TAG_KEY];
-    --local isUnread = value[UNREAD_KEY] > 0
-    --self.sortVal[i] = Chitchat_GetWhisperLogSortVal(value[FAVORITE_KEY], isUnread);
-    --tinsert(self.ordered_notes,value[TAG_KEY])
+    self.cachedNotes[#self.cachedNotes + 1] = value[self.TAG_KEY];
+    --local isUnread = value[self.UNREAD_KEY] > 0
+    --self.sortVal[i] = Chitchat_GetWhisperLogSortVal(value[self.FAVORITE_KEY], isUnread);
+    --tinsert(self.ordered_notes,value[self.TAG_KEY])
   end
   
   -- local comparison = function(index1, index2)
