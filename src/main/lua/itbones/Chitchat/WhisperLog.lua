@@ -15,7 +15,7 @@ end
 
 function Chitchat:WhisperLogSet(tag,property,value)
   local whisper_log = Chitchat:GetLog(tag)
-  if whisper_log ~= nil then
+  if whisper_log ~= nil or property ~= nil then
     whisper_log[property] = value
     self:Debug(tag..' set '..property..' to '..tostring(value))
     self:SendMessage("CHITCHAT_LOG_UPDATED", tag)
@@ -24,7 +24,7 @@ end
 
 function Chitchat:WhisperLogGet(tag,property)
   local whisper_log = Chitchat:GetLog(tag)
-  if whisper_log ~= nil then
+  if whisper_log ~= nil and property ~= nil then
     return whisper_log[property] or false
   end
   return false

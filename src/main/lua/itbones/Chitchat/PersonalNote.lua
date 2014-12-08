@@ -24,16 +24,20 @@ function Chitchat:MarkAsSeen(tag)
 end
 
 -- UPDATE
-function Chitchat:UpdatePersonalNote(tag,note,rating,role,klass)
+function Chitchat:UpdatePersonalNote(tag,note,rating,role,klass,softUpdate)
   local personal_note = Chitchat:FindOrCreatePersonalNote(tag)
   -- Nil check
   if personal_note == nil then
     error("UpdatePersonalNote: Unable to find or create a personal note.",2)
   end
   -- Frequency check
-  local now = time()
-  if personal_note[self.TIMESTAMP_KEY] ~= nil and personal_note[self.TIMESTAMP_KEY] + 3600 < now then
-    return
+  if softUpdate then
+    -- when true will only update if 60 seconds has passed to
+    -- prevent repeated updates from people joining and leaving groups
+    local now = time()
+    if personal_note[self.TIMESTAMP_KEY] ~= nil and personal_note[self.TIMESTAMP_KEY] + 60 < now then
+      return
+    end
   end
   local updated = false
   if rating ~= nil then

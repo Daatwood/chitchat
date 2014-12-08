@@ -539,71 +539,62 @@
 					<Anchor point="TOPRIGHT" x="-10" y="-10"/>
 				</Anchors>
 			</Button>
-      <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Notes">
-        <Anchors>
-          <Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="BOTTOMLEFT" x="11" y="6"/>
-        </Anchors>
-        <Scripts>
-          <OnClick>
-            PlaySound("UI_Toybox_Tabs");
-          </OnClick>
-        </Scripts>
-      </Button>
-      <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="Encounters">
-        <Anchors>
-          <Anchor point="LEFT" relativeTo="$parentTab1" relativePoint="RIGHT" x="-16" y="0"/>
-        </Anchors>
-        <Scripts>
-          <OnClick>
-            PlaySound("UI_Toybox_Tabs");
-          </OnClick>
-        </Scripts>
-      </Button>
       <Button parentKey="SaveButton" inherits="OptionsButtonTemplate" text="Save">
 				<Anchors>
 					<Anchor point="BOTTOMRIGHT" relativeKey="$parent" relativePoint="BOTTOMRIGHT" x="-26" y="10"/>
 				</Anchors>
+        <Scripts>
+          <OnLoad>self:RegisterForClicks("LeftButtonUp")</OnLoad>
+          <OnClick>Chitchat:PersonalNoteFrameOnSave(self,button,down)</OnClick>
+        </Scripts>
 			</Button>
-      <Slider parentKey="Rating" inherits="OptionsSliderTemplate" minValue="0.0" maxValue="10.0" defaultValue="0.0" valueStep="1.0">
+      <Slider parentKey="Rating" inherits="OptionsSliderTemplate" minValue="0.0" maxValue="10.0" defaultValue="0.0" valueStep="1.0" name="$parentRating">
 				<Anchors>
-					<Anchor point="BOTTOM" relativeKey="$parent" relativePoint="BOTTOM" x="0" y="-40"/>
+					<Anchor point="TOP" relativeKey="$parent" relativePoint="TOP" x="40" y="-140"/>
 				</Anchors>
         <Scripts>
           <OnValueChanged>
+            Chitchat:PersonalNoteFrameOnValueChangedRating(self,value)
           </OnValueChanged>
         </Scripts>
       </Slider>
-			<EditBox name="NoteBox" letters="255" inherits="InputBoxTemplate" autoFocus="false">
+			<EditBox parentKey="NoteBox" name="$parentNoteBox" letters="255" inherits="InputBoxTemplate" autoFocus="false">
 				<Size x="300" y="20"/>
 				<Anchors>
 					<Anchor point="CENTER" relativeKey="$parent" relativePoint="CENTER" x="0" y="0"/>
 				</Anchors>
 				<Scripts>
+          <OnEnterPressed>
+            Chitchat:PersonalNoteFrameOnEnterPressed(self)
+          </OnEnterPressed>
+          <OnEscapePressed>
+            self:GetParent():Hide()
+          </OnEscapePressed>
 				</Scripts>
 			</EditBox>
     </Frames>
     <Layers>
 			<Layer level="ARTWORK">
         <!-- CHANGE TO HEADER -->
-				<FontString parentKey="Header" inherits="QuestFont_Enormous" justifyH="LEFT" text="Personal Note">
+				<FontString parentKey="Header" inherits="QuestFont_Enormous" justifyH="CENTER" text="Personal Note">
 					<Size x="258" y="15"/>
 					<Anchors>
-						<Anchor point="TOP" relativeKey="$parent" relativePoint="TOP" x="10" y="-30"/>
+						<Anchor point="TOP" relativeKey="$parent" relativePoint="TOP" x="0" y="-30"/>
 					</Anchors>
           <Color r="1.0" g="0.82" b="0"/>
 				</FontString>
         <!-- CHANGE TO CLASS ICON -->
-        <Texture parentKey="ClassIcon">
-					<Size x="40" y="40"/>
+        <Texture parentKey="ClassIcon" alpha="0.75" >
+					<Size x="80" y="80"/>
 					<Anchors>
-						<Anchor point="TOPLEFT" x="12" y="-4"/>
+						<Anchor point="TOPLEFT" x="4" y="-4"/>
 					</Anchors>
 				</Texture>
         <!-- CHANGE TO PLAYER TAG -->
-				<FontString parentKey="PlayerTag" inherits="GameFontNormalLarge" justifyH="LEFT" text="PlayerTag">
+				<FontString parentKey="PlayerTag" inherits="GameFontNormalLarge" justifyH="CENTER" text="Prototype-Placeholder Server">
 					<Size x="258" y="15"/>
 					<Anchors>
-						<Anchor point="BOTTOM" relativeKey="Header" relativePoint="BOTTOM" x="0" y="-40"/>
+						<Anchor point="TOP" relativeKey="$parent" relativePoint="TOP" x="0" y="-80"/>
 					</Anchors>
 				</FontString>
         <!-- CHANGE TO NOTE -->
@@ -615,12 +606,35 @@
           <Color r=".75" g=".75" b=".73"/>
 					<!--Color r="0.792" g="0.690" b="0.529" a="1"/-->
 				</FontString>
+        <!-- CHANGE TO TANK ICON -->
+        <Texture name="$parentTankIcon" parentKey="TankIcon" file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="false" alpha="0.25" >
+          <Size x="40" y="40"/>
+          <TexCoords left="0" right="0.2617" top="0.2617" bottom="0.5234"/>
+          <Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="TOPLEFT" x="40" y="-130"/>
+					</Anchors>
+				</Texture>
+        <!-- CHANGE TO HEALER ICON -->
+        <Texture name="$parentHealerIcon" parentKey="HealerIcon" file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="false" alpha="0.25" >
+					<Size x="40" y="40"/>
+          <TexCoords left="0.2617" right="0.5234" top="0" bottom="0.2617"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="TOPLEFT" x="80" y="-130"/>
+					</Anchors>
+				</Texture>
+        <!-- CHANGE TO DPS ICON -->
+        <Texture name="$parentDamagerIcon" parentKey="DamagerIcon" file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="false" alpha="0.25" >
+					<Size x="40" y="40"/>
+          <TexCoords left="0.2617" right="0.5234" top="0.2617" bottom="0.5234"/>
+					<Anchors>
+						<Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="TOPLEFT" x="120" y="-130"/>
+					</Anchors>
+				</Texture>
       </Layer>
     </Layers>
     <Scripts>
        <OnLoad>
-        PanelTemplates_SetNumTabs(self,2);
-        PanelTemplates_SetTab(self, 1)
+        Chitchat:PersonalNoteFrameOnLoad(self)
       </OnLoad>
       <OnMouseDown>
         if button == "LeftButton" and not self.isMoving then

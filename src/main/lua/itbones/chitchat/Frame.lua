@@ -8,7 +8,7 @@ function Chitchat:OnLoadFrame(frame)
   
   self:RegisterMessage("CHITCHAT_MESSAGE_CREATED","DirtyLogCache")
   self:RegisterMessage("CHITCHAT_LOG_UPDATED","UpdateConversationList")
-  self:RegisterMessage("CHITCHAT_NOTE_UPDATED","UpdateConversationList")
+  self:RegisterMessage("CHITCHAT_NOTE_UPDATED","OnChitchatNoteUpdated")
   self:RegisterMessage("CHITCHAT_LOG_DELETED","UpdateConversationList")
 end
 
@@ -21,14 +21,14 @@ end
 function Chitchat_InitializeLogOptionsMenu(self, level)
   local info = UIDropDownMenu_CreateInfo()
   if level == 1 then
-    info.checked = Chitchat:WhisperLogGet(Chitchat.menuItemID, FAVORITE_KEY)
+    info.checked = Chitchat:WhisperLogGet(Chitchat.menuItemID, Chitchat.FAVORITE_KEY)
     info.notCheckable = false
     info.text = "Favorite"
     info.value = "FAVORITE"
     info.func = OnClickDropDownItem
     UIDropDownMenu_AddButton(info)
   
-    info.checked = Chitchat:WhisperLogGet(Chitchat.menuItemID, "quiet")
+    info.checked = Chitchat:WhisperLogGet(Chitchat.menuItemID, Chitchat.HIDE_CHAT_KEY)
     info.notCheckable = false
     info.text = "Silent?"
     info.value = "QUITE_MODE"
@@ -63,10 +63,12 @@ function OnClickDropDownItem(self)
   local action = self.value
   if action == "HAVE_WE_MET" then
     Chitchat:EditNoteHandler(Chitchat.menuItemID)
+  elseif action == "COPY_NAME" then
+    print(Chitchat.menuItemID)
   elseif action == "QUITE_MODE" then
-    Chitchat:WhisperLogSet(Chitchat.menuItemID, "quiet", not self.checked)
+    Chitchat:WhisperLogSet(Chitchat.menuItemID, Chitchat.HIDE_CHAT_KEY, not self.checked)
   elseif action == "FAVORITE" then
-    Chitchat:WhisperLogSet(Chitchat.menuItemID, self.FAVORITE_KEY, not self.checked)
+    Chitchat:WhisperLogSet(Chitchat.menuItemID, Chitchat.FAVORITE_KEY, not self.checked)
   elseif action == "DELETE_LOG" then
     Chitchat:DeleteWhisperLog(Chitchat.menuItemID, false)
   elseif action == "DELETE_MESSAGES" then
@@ -283,29 +285,26 @@ function Chitchat:GetOrderedLogList()
   if not self.cacheDirty and self.cachedLogs ~= nil then return self.cachedLogs end
   local logs = self.logs or {}
   self.cachedLogs = {}
-  self.sortVal = {};
+  self.sortVal = {}
   for key, value in pairs(logs) do
     local i = #self.cachedLogs + 1
     local isUnread = value[self.UNREAD_KEY] > 0
     local tag = value[self.TAG_KEY]
-    if self:WhisperLogMatchersFilter(tag) then
+    if self:TagMatchesFilter(tag) then
       self.cachedLogs[i] = tag
       self.sortVal[tag] = Chitchat_GetWhisperLogSortVal(value[self.FAVORITE_KEY], isUnread)
     end
   end
-  
   local comparison = function(index1, index2)
-		return Chtichat_SortComparison(index1, index2);
+		return Chtichat_SortComparison(index1, index2)
 	end
-  
-  table.sort(self.cachedLogs, comparison);
-	self.sortVal = {};
-  
+  table.sort(self.cachedLogs, comparison)
+	self.sortVal = {}
   self.cacheDirty = false
   return self.cachedLogs
 end
 
-function Chitchat:WhisperLogMatchersFilter(tag)
+function Chitchat:TagMatchesFilter(tag)
 	if ( self.searchString ) then
 		if ( string.find(string.lower(tag), self.searchString, 1, true) ) then
 			return true;
@@ -344,6 +343,16 @@ end
 -------------------------------------------------------------------------------
 ---- HAVE WE MET FRAME
 -------------------------------------------------------------------------------
+
+function Chitchat:OnChitchatNoteUpdated(self, tag)
+  
+  Chitchat.cachedNotesDirty = true
+  if HaveWeMetFrame:IsShown() then
+    Chitchat:HaveWeMetFrameListUpdate()
+  end
+  Chitchat:UpdateConversationList(self,tag)
+end
+
 function Chitchat:OnLoadHaveWeMetFrame(frame)
   HybridScrollFrame_CreateButtons(frame.List.listScroll, "HaveWeMetPersonalNoteTemplate", 0, 0)
   UIDropDownMenu_Initialize(HaveWeMetDropDown, Chitchat_InitializeHaveWeMetMenu, "MENU")
@@ -464,10 +473,6 @@ function Chitchat:HaveWeMetFrameListUpdate()
       button:Hide()
     end
   end
-  
-  --GarrisonLandingPageReportList_Update();
-  --HaveWeMetFrame:SetScript("OnUpdate", GarrisonLandingPageReport_OnUpdate);
-  
   local totalHeight = numItems * scrollFrame.buttonHeight;
 	local displayedHeight = numButtons * scrollFrame.buttonHeight;
 	HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight);
@@ -475,24 +480,137 @@ function Chitchat:HaveWeMetFrameListUpdate()
 end
 
 Chitchat.cachedNotes = {}
-function Chitchat:GetOrderedNoteList(cache)
-  if cache and self.cachedNotes ~= nil then return self.cachedNotes end
+Chitchat.cachedNotesDirty = true
+function Chitchat:GetOrderedNoteList()
+  if not self.cachedNotesDirty and self.cachedNotes ~= nil then return self.cachedNotes end
   local notes = self.notes or {}
-  --self.cachedNotes = {}
-  self.sortVal = {};
+  self.cachedNotes = {}
+  self.sortVal = {}
   for key, value in pairs(notes) do
-    self.cachedNotes[#self.cachedNotes + 1] = value[self.TAG_KEY];
-    --local isUnread = value[self.UNREAD_KEY] > 0
-    --self.sortVal[i] = Chitchat_GetWhisperLogSortVal(value[self.FAVORITE_KEY], isUnread);
-    --tinsert(self.ordered_notes,value[self.TAG_KEY])
+    local i = #self.cachedNotes + 1
+    local tag = value[self.TAG_KEY]
+    local seen = value[self.SEEN_KEY]
+    if self:TagMatchesFilter(tag) then
+      self.cachedNotes[i] = tag
+      if seen ~= nil then
+        self.sortVal[tag] = seen[#seen]
+      else
+        self.sortVal[tag] = 0
+      end
+    end
   end
-  
-  -- local comparison = function(index1, index2)
-		-- return Chtichat_SortComparison(self, index1, index2);
-	-- end
-  
-  -- table.sort(self.cachedNotes, comparison);
-	-- self.sortVal = {};
-  
+  local comparison = function(index1,index2)
+    return Chitchat:PersonalNoteComparison(index1,index2)
+  end
+  table.sort(self.cachedNotes,comparison)
+  self.sortVal = {}
+  self.cachedNotesDirty = false
   return self.cachedNotes
+end
+
+function Chitchat:PersonalNoteComparison(index1,index2)
+	local sortTest1 = Chitchat.sortVal[index1];
+	local sortTest2 = Chitchat.sortVal[index2];
+  if sortTest1 == nil or sortTest2 == nil then
+   return false
+  end
+  local sortVal = sortTest2 - sortTest1;
+	if (sortVal < 0) then
+		return true;
+	elseif (sortVal == 0) then
+		return (index1 < index2);	-- from C side elements are alphabetically sorted
+	else
+		return false;
+	end
+end
+
+-------------------------------------------------------------------------------
+---- HAVE WE MET NOTE FRAME
+-------------------------------------------------------------------------------
+function Chitchat:PersonalNoteFrameOnLoad(frame)
+  local ratingFrameName = frame.Rating:GetName()
+  getglobal(ratingFrameName..'Low'):SetText('Unrated')
+  getglobal(ratingFrameName..'High'):SetText('10')
+  getglobal(ratingFrameName..'Text'):SetText('Rating:')
+  
+  local class_texture = CLASS_ICON_TCOORDS["PRIEST"]
+  frame.ClassIcon:Show()
+  frame.ClassIcon:SetAlpha(0.75)
+  frame.ClassIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+  frame.ClassIcon:SetTexCoord(unpack(class_texture))
+end
+
+function Chitchat:PersonalNoteFrameOnValueChangedRating(self,value)
+  local text = math.floor(value+0.5)
+  if text == 0 then
+    text = "Unrated"
+  end
+  getglobal(self:GetName() .. 'Text'):SetText("Rating: "..text)
+end
+
+function Chitchat:PersonalNoteFrameOnEnterPressed(self)
+  local frame = self:GetParent()
+  local tag = frame.PlayerTag:GetText()
+  local rating = math.floor(frame.Rating:GetValue()+0.5)
+  local note = frame.NoteBox:GetText()
+  Chitchat:UpdatePersonalNote(tag,note,rating,nil,nil)
+  frame:Hide()
+end
+
+function Chitchat:PersonalNoteFrameOnSave(self,button,down)
+  Chitchat:PersonalNoteFrameOnEnterPressed(self)
+end
+
+function Chitchat:ShowPersonalNoteFrame(tag)
+  local personal_note = Chitchat:GetNote(tag)
+  local note = ""
+  local rating = 0
+  local className = ''
+  local roleNumber = 0
+  if personal_note ~= nil then
+    note = personal_note[self.NOTE_KEY]
+    rating = personal_note[self.RATING_KEY]
+    if type(rating) ~= "number" then rating = 0 end
+    className = personal_note[self.CLASS_KEY]
+    roleNumber = personal_note[self.ROLE_KEY]
+  end
+  local frame = HaveWeMetNoteFrame
+  frame.PlayerTag:SetText(tag)
+  frame.NoteBox:SetText(note)
+  frame.Rating:SetValue(rating)
+  self:PersonalNoteFrameSetClassIcon(frame,className)
+  self:PersonalNoteFrameSetRoles(frame,roleNumber)
+  frame:Show()
+  frame:Raise()
+end
+
+function Chitchat:PersonalNoteFrameSetClassIcon(frame, className)
+  local class_texture = CLASS_ICON_TCOORDS[className]
+  if class_texture then
+    frame.ClassIcon:Show()
+    frame.ClassIcon:SetAlpha(0.75)
+    frame.ClassIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
+    frame.ClassIcon:SetTexCoord(unpack(class_texture))
+  else
+    frame.ClassIcon:Hide()
+  end
+end
+
+function Chitchat:PersonalNoteFrameSetRoles(frame, roleNumber)
+  
+  if self:IsTankRole(roleNumber) then
+    frame.TankIcon:SetAlpha(1.0)
+  else
+    frame.TankIcon:SetAlpha(0.25)
+  end
+  if self:IsHealerRole(roleNumber) then
+    frame.HealerIcon:SetAlpha(1.0)
+  else
+    frame.HealerIcon:SetAlpha(0.25)
+  end
+  if self:IsDamagerRole(roleNumber) then
+    frame.DamagerIcon:SetAlpha(1.0)
+  else
+    frame.DamagerIcon:SetAlpha(0.25)
+  end
 end

@@ -73,12 +73,12 @@ function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId, forceUpdate)
     self.encounterBlizzId = blizzId
     self:RegisterEvent("INSPECT_ACHIEVEMENT_READY", "OnEventInspectAchievementReady")
     SetAchievementComparisonUnit(unitId)
+    personal_note[self.ENCOUNTERS_TIMESTAMP_KEY] = now
   else
     self:Debug("Cannot inspect unit:"..unitId..",tag:"..unitTag)
     self.encounterUnitId = nil
     self.encounterUnitTag = nil
   end
-  personal_note[self.ENCOUNTERS_TIMESTAMP_KEY] = now
 end
 
 function Chitchat:Inspectable(unitId)
@@ -87,18 +87,22 @@ end
 
 function Chitchat:OnEventInspectAchievementReady()
   self:UnregisterEvent("INSPECT_ACHIEVEMENT_READY");
+  local startTime = time()
   if self.encounterUnitId == nil or self.encounterUnitTag == nil then
     self:Debug("Encounter inspection cannot perform.")
     return 
   end
   if self.encounterBlizzId == nil then
-    self:Debug("Polling all statistics")
-    local i, statisticCount
-    statisticCount = GetCategoryNumAchievements(self.WOD_DUNGEON_CATEGORY,false)
-    for i = 1, statisticCount do
-      local bId, _ = GetAchievementInfo(self.WOD_DUNGEON_CATEGORY,i)
-      self:AddPlayerEncounterStatistic(self.encounterUnitTag, bId)
+    local i, blizzId
+    for i, blizzId in ipairs(self:CacheWodBlizzIds()) do
+      self:AddPlayerEncounterStatistic(self.encounterUnitTag, blizzId)
     end
+    -- local i, statisticCount
+    -- statisticCount = GetCategoryNumAchievements(self.WOD_DUNGEON_CATEGORY,false)
+    -- for i = 1, statisticCount do
+      -- local bId, _ = GetAchievementInfo(self.WOD_DUNGEON_CATEGORY,i)
+      -- self:AddPlayerEncounterStatistic(self.encounterUnitTag, bId)
+    -- end
   else
     self:AddPlayerEncounterStatistic(self.encounterUnitTag, self.encounterBlizzId)
   end
@@ -107,6 +111,24 @@ function Chitchat:OnEventInspectAchievementReady()
   self.encounterUnitTag = nil
   self.encounterBlizzId = nil
   ClearAchievementComparisonUnit();
+  self:Debug("Fetched "..#self:CacheWodBlizzIds().." encounters in "..(time()-startTime).." seconds.")
+end
+
+Chitchat.cachedWodBlizzIds = {}
+Chitchat.cachedWodBlizzIdsDirty = true
+function Chitchat:CacheWodBlizzIds()
+  if not self.cachedWodBlizzIdsDirty and self.cachedWodBlizzIds ~= nil then return self.cachedWodBlizzIds end
+  local i, statisticCount
+  self.cachedWodBlizzIds = {}
+  statisticCount = GetCategoryNumAchievements(self.WOD_DUNGEON_CATEGORY,false)
+  for i = 1, statisticCount do
+    local bId, _ = GetAchievementInfo(self.WOD_DUNGEON_CATEGORY,i)
+    if bId ~= nil then
+      self.cachedWodBlizzIds[i] = bId
+    end
+  end
+  self.cachedWodBlizzIdsDirty = false
+  return self.cachedWodBlizzIds
 end
 
 -- Gets the count value and adds to encounter table and personal_note link
@@ -171,6 +193,9 @@ function Chitchat:GetEncounterDungeonKills(tag,zone)
   end
   local player_encounters = personal_note[self.ENCOUNTERS_KEY]
   local encounter = tostring(blizzids["NORMAL"])
+  if player_encounters == nil then
+    return 0,0
+  end
   if player_encounters[encounter] then
     nk = self:GetEncounter(encounter)[tag][self.COUNT_KEY]
   end
@@ -188,14 +213,17 @@ function Chitchat:GetEncounterRaidKills(tag,zone,difficulty)
   local valid = false
   if bosses == nil then
     self:Debug("GetEncounterRaidKills: Zone not found:"..zone)
-    return kills
+    return kills, valid
   end
   local personal_note = Chitchat:GetNote(tag)
   if personal_note == nil then 
     self:Debug("GetEncounterRaidKills: Personal Note nil.")
-    return kills
+    return kills, valid
   end
   local player_encounters = personal_note[self.ENCOUNTERS_KEY]
+  if player_encounters == nil then
+    return kills, valid
+  end
   for i, boss in ipairs(bosses) do
     local blizzid = self.WOD_RAID_ZONE_ENCOUNTERS[boss][difficulty]
     local count = 0
@@ -211,7 +239,7 @@ end
 -- Updates the BossEncounters to include a category
 function Chitchat:RefreshEncounterTable(category)
   self:Debug("Refreshing Encounter Table")
-  local statisticCount = GetCategoryNumAchievements(category)
+  local statisticCount = GetCategoryNumAchievements(category,false)
   for i = 1, statisticCount do
     local blizzId, name
     blizzId, name = GetAchievementInfo(category, i)
