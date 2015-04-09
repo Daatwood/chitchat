@@ -2,7 +2,12 @@
 
 builds
 version
-./version
+.version
+.project
+.development
+.wow_Version
+.build_path
+.commit
 
 ### Lua ###
 # Compiled Lua sources
