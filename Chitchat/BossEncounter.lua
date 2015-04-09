@@ -26,13 +26,13 @@ Chitchat.WOD_DUNGEON_ZONE_ENCOUNTERS = {
 }
 Chitchat.WOD_RAID_ZONE_ENCOUNTERS = {
   ["Highmaul"] = { "Kargath Bladefist", "The Butcher", "Tectus", "Brackenspore", "Twin Ogron", "Ko'ragh", "Imperator Mar'gok" },
-  ["Kargath Bladefist"] = {["RAID_FINDER"] = 9280, ["NORMAL"] = 9282, ["HEROIC"] = 9284, ["MYTHIC"] = 9285},
-  ["The Butcher"] = {["RAID_FINDER"] = 9286, ["NORMAL"] = 9287, ["HEROIC"] = 9288, ["MYTHIC"] = 9289},
-  ["Tectus"] = {["RAID_FINDER"] = 9290, ["NORMAL"] = 9292, ["HEROIC"] = 9293, ["MYTHIC"] = 9294},
-  ["Brackenspore"] = {["RAID_FINDER"] = 9295, ["NORMAL"] = 9297, ["HEROIC"] = 9298, ["MYTHIC"] = 9300},
-  ["Twin Ogron"] = {["RAID_FINDER"] = 9301, ["NORMAL"] = 9302, ["HEROIC"] = 9303, ["MYTHIC"] = 9304},
-  ["Ko'ragh"] = {["RAID_FINDER"] = 9306, ["NORMAL"] = 9308, ["HEROIC"] = 9310, ["MYTHIC"] = 9311},
-  ["Imperator Mar'gok"] = {["RAID_FINDER"] = 9312, ["NORMAL"] = 9313, ["HEROIC"] = 9314, ["MYTHIC"] = 9315},
+  ["Kargath Bladefist"] = {["LOOKING_FOR_RAID"] = 9280, ["NORMAL"] = 9282, ["HEROIC"] = 9284, ["MYTHIC"] = 9285},
+  ["The Butcher"] = {["LOOKING_FOR_RAID"] = 9286, ["NORMAL"] = 9287, ["HEROIC"] = 9288, ["MYTHIC"] = 9289},
+  ["Tectus"] = {["LOOKING_FOR_RAID"] = 9290, ["NORMAL"] = 9292, ["HEROIC"] = 9293, ["MYTHIC"] = 9294},
+  ["Brackenspore"] = {["LOOKING_FOR_RAID"] = 9295, ["NORMAL"] = 9297, ["HEROIC"] = 9298, ["MYTHIC"] = 9300},
+  ["Twin Ogron"] = {["LOOKING_FOR_RAID"] = 9301, ["NORMAL"] = 9302, ["HEROIC"] = 9303, ["MYTHIC"] = 9304},
+  ["Ko'ragh"] = {["LOOKING_FOR_RAID"] = 9306, ["NORMAL"] = 9308, ["HEROIC"] = 9310, ["MYTHIC"] = 9311},
+  ["Imperator Mar'gok"] = {["LOOKING_FOR_RAID"] = 9312, ["NORMAL"] = 9313, ["HEROIC"] = 9314, ["MYTHIC"] = 9315},
 }
 
 Chitchat.encounterUnitId = nil
@@ -82,7 +82,7 @@ function Chitchat:DoEncounterInspect(unitId, unitTag, blizzId, forceUpdate)
 end
 
 function Chitchat:Inspectable(unitId)
-  return (CanInspect(unitId) and UnitIsVisible(unitId) and CheckInteractDistance(unitId, 1) and not InCombatLockdown())
+  return (CanInspect(unitId) and UnitIsVisible(unitId) and CheckInteractDistance(unitId, 1)) --  and not InCombatLockdown())
 end
 
 function Chitchat:OnEventInspectAchievementReady()
@@ -97,12 +97,6 @@ function Chitchat:OnEventInspectAchievementReady()
     for i, blizzId in ipairs(self:CacheWodBlizzIds()) do
       self:AddPlayerEncounterStatistic(self.encounterUnitTag, blizzId)
     end
-    -- local i, statisticCount
-    -- statisticCount = GetCategoryNumAchievements(self.WOD_DUNGEON_CATEGORY,false)
-    -- for i = 1, statisticCount do
-      -- local bId, _ = GetAchievementInfo(self.WOD_DUNGEON_CATEGORY,i)
-      -- self:AddPlayerEncounterStatistic(self.encounterUnitTag, bId)
-    -- end
   else
     self:AddPlayerEncounterStatistic(self.encounterUnitTag, self.encounterBlizzId)
   end
@@ -209,7 +203,7 @@ end
 function Chitchat:GetEncounterRaidKills(tag,zone,difficulty)
   local kills = {}
   local bosses = self.WOD_RAID_ZONE_ENCOUNTERS[zone]
-  local difficulty = tostring(difficulty):upper()
+  local difficulty = tostring(difficulty):upper():gsub(' ','_')
   local valid = false
   if bosses == nil then
     self:Debug("GetEncounterRaidKills: Zone not found:"..zone)

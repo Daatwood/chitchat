@@ -31,7 +31,9 @@ Chitchat.optionChitchatRecordBnetWhisper = true
 Chitchat.optionChitchatChannelMonitoring = true
 Chitchat.optionChitchatChannelCapsLockFix = true
 Chitchat.optionChitchatChannelRecording = true
-Chitchat.optionChitchatChannelsToRecord = { ["TRADE"] = true, ["GENERAL"] = true, ["GUIILD"] = true }
+Chitchat.optionChitchatChannelsToRecord = { ["TRADE"] = true, ["GENERAL"] = true, ["WORLDDEFENSE"] = true }
+Chitchat.optionChitchatGuildRecording = true
+Chitchat.optionChitchatGuildOfficerRecording = true
 Chitchat.optionChitchatAllowQuietMode = true
 Chitchat.optionHaveWeMetAutoRecord = true
 Chitchat.optionHaveWeMetTooltips = true
@@ -120,6 +122,12 @@ function Chitchat:OnEnable()
   if self.optionChitchatChannelRecording then
     self:RegisterEvent("CHAT_MSG_CHANNEL","OnEventChannelChatMessage")
   end
+  if self.optionChitchatGuildRecording then 
+    self:RegisterEvent("CHAT_MSG_GUILD","OnEventChannelChatMessage")
+  end
+  if self.optionChitchatGuildOfficerRecording then
+    self:RegisterEvent("CHAT_MSG_OFFICER","OnEventChannelChatMessage")
+  end
   if self.optionChitchatRecordBnetWhisper then
     self:RegisterEvent("CHAT_MSG_BN_WHISPER","OnEventBnetWhisperIncoming")
     self:RegisterEvent("CHAT_MSG_BN_WHISPER_INFORM","OnEventBnetWhisperOutgoing")
@@ -153,6 +161,12 @@ function Chitchat:OnDisable()
   end
   if self.optionChitchatChannelRecording then
     self:UnregisterEvent("CHAT_MSG_CHANNEL","OnEventChannelChatMessage")
+  end
+  if self.optionChitchatGuildRecording then 
+    self:UnregisterEvent("CHAT_MSG_GUILD","OnEventChannelChatMessage")
+  end
+  if self.optionChitchatGuildOfficerRecording then
+    self:UnregisterEvent("CHAT_MSG_OFFICER","OnEventChannelChatMessage")
   end
   if self.optionChitchatRecordBnetWhisper then
     self:UnregisterEvent("CHAT_MSG_BN_WHISPER","OnEventBnetWhisperIncoming")
@@ -348,7 +362,7 @@ function Chitchat:ShowNoteTooltip(tag)
   ItemRefTooltip:AddLine(WHITE..server)
   self:TooltipHaveWeMet(ItemRefTooltip,personal_note,true)
   self:TooltipEncounterDungeon(ItemRefTooltip,tag,self.WOD_DUNGEON_ZONES)
-  self:TooltipEncounterRaid(ItemRefTooltip,tag, self.WOD_RAID_ZONES, {"Normal","Heroic"})
+  self:TooltipEncounterRaid(ItemRefTooltip,tag, self.WOD_RAID_ZONES, {"Raid Finder","Normal","Heroic","Mythic"})
   ItemRefTooltip:Show()
   ItemRefTooltip:Show()
 end
@@ -369,10 +383,10 @@ function Chitchat:TooltipHaveWeMet(tooltip, personal_note, showExpandedTooltip)
   if self:IsDamagerRole(roleNumber) then
     roleString = roleString..""..INLINE_DAMAGER_ICON
   end
-  if type(rating) ~= "number" or rating < 1 then 
-    rating = 'Unrated'
+  if type(rating) == "number" or rating > 0 then 
+    tooltip:AddDoubleLine(YELLOW.."Rated "..WHITE..rating,roleString,1,1,1,1,1,1)
   end
-  tooltip:AddDoubleLine(YELLOW.."Rated "..WHITE..rating,roleString,1,1,1,1,1,1)
+  
   if note ~= nil and note ~= "" then
     if not showExpandedTooltip then
       note = note
@@ -404,18 +418,18 @@ function Chitchat:TooltipEncounters(tooltip, personal_note, showExpandedTooltip)
       if showExpandedTooltip then instances = self.WOD_DUNGEON_ZONES end
       self:TooltipEncounterDungeon(tooltip, tag, instances)
     elseif instanceType == "raid" then
-      local instances = { name }
+      local instances = { name } -- nil?
       local difficulties = { difficulty }
       if showExpandedTooltip then 
         instances = self.WOD_RAID_ZONES 
-        difficulties = { 'Normal', 'Heroic' }
+        difficulties = { "Looking for Raid","Normal","Heroic","Mythic" }
       end
-      self:TooltipEncounterRaid(tooltip, tag, instance, difficulties)
+      self:TooltipEncounterRaid(tooltip, tag, instances, difficulties)
     end
   else
     if showExpandedTooltip then
       self:TooltipEncounterDungeon(tooltip, tag, self.WOD_DUNGEON_ZONES)
-      self:TooltipEncounterRaid(tooltip, tag, self.WOD_RAID_ZONES,{'Normal', 'Heroic'})
+      self:TooltipEncounterRaid(tooltip, tag, self.WOD_RAID_ZONES,{"Looking for Raid","Normal","Heroic","Mythic"})
     end
   end
   tooltip:AddDoubleLine(YELLOW.."Encounters Updated at|r", date("%m/%d/%y %H:%M:%S", encounter_timestamp),1,1,1,1,1,1)
@@ -423,10 +437,15 @@ end
 -- Dungeon Name [N|H]
 function Chitchat:TooltipEncounterDungeon(tooltip, tag, instances)
   local i, zone
-  tooltip:AddLine(tooltipNoteFormat:format('Dungeons',''),1, 1, 1, false)
+  --tooltip:AddLine(tooltipNoteFormat:format('Dungeons',''),1, 1, 1, false)
+  tooltip:AddDoubleLine(YELLOW.."Dungeons|r", GREEN.."N"..WHITE..' | '..ORANGE.."H|r",1,1,1,1,1,1)
   for i, zone in ipairs(instances) do
     local nk, hk = self:GetEncounterDungeonKills(tag,zone)
-    tooltip:AddDoubleLine(WHITE..'  '..zone.."|r", GREEN..nk..WHITE..' | '..RED..hk.."|r",1,1,1,1,1,1)
+    local colorNk = GREEN
+    local colorHk = ORANGE
+    if tostring(nk) == "0" then colorNk = RED end
+    if tostring(hk) == "0" then colorHk = RED end
+    tooltip:AddDoubleLine(WHITE..'  '..zone.."|r", colorNk..nk..WHITE..' | '..colorHk..hk.."|r",1,1,1,1,1,1)
   end
 end
 -- Raid Name (Difficulty) [9|8|7|6|5|4|3|2|1]
@@ -447,8 +466,7 @@ function Chitchat:TooltipEncounterRaid(tooltip, tag, instances, difficulties)
             kill_string = kill_string..WHITE.." | "
           end
         end
-        tooltip:AddDoubleLine(WHITE..'  '..zone.." "..YELLOW..difficulty.." |r", kill_string.."|r",1,1,1,1,1,1)
-        --tooltip:AddLine(tooltipNoteRaidEncounterFormat:format(zone, difficulty, kill_string),1, 1, 1, false)
+        tooltip:AddDoubleLine(WHITE..'  '..zone.." "..ORANGE..difficulty.." |r", kill_string.."|r",1,1,1,1,1,1)
       end
     end
   end
