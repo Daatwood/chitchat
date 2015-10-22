@@ -3,7 +3,17 @@ Chitchat::HaveWeMet - Tracks players(note & rating)
 Chitchat - Records and manages messages from players.
 
 Chitchat Goal:
-Record whispers from players.
+* Compile Detailed Contacts
+* Record whispers from players.
+
+```
+Chitchat.GetPlayerId[]
+Chitchat.CreateDetail[string:player_id, string:owner]
+Chitchat.GetDetail[string:player_id, boolean:is_battlenet] -- Returns Detail information about player_name
+Chitchat.GetMessages[string:player_id, int:count] -- Returns
+```
+
+
 
 WhisperLog, KEY = tag
 String tag - unique link to a player
@@ -32,4 +42,4 @@ Value{WHISPER_LOG: whisper_log_id, PLAYER_NOTE: player_note_id} - a table with f
 
 WhispersLog can be set to not be persistent and only exists in sessions.
 WhisperEntry can be auto removed after X Days or Weeks.
-PlayerNote can be set to not be auto generated 
+PlayerNote can be set to not be auto generated

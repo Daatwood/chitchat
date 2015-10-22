@@ -266,9 +266,28 @@ function Chitchat_FilterChannelMessages(self,event,message,sender, ...)
     end
   end
   if Chitchat:GetNote(sender) ~= nil then
-    message = noteHyperLink:format(sender).." "..message
+    message = Chitchat:RolesToString(sender)..""..noteHyperLink:format(sender).." "..message
   end
   return false, message, sender, ...
+end
+
+function Chitchat:RolesToString(sender)
+  local roles_note = ""
+  local pnote = self:GetNote(sender)
+  if pnote ~= nil then
+    local roles = pnote[self.ROLE_KEY]
+    
+    if self:IsTankRole(roles) then
+      roles_note = roles_note..""..INLINE_TANK_ICON
+    end
+    if self:IsHealerRole(roles) then
+      roles_note = roles_note..""..INLINE_HEALER_ICON
+    end
+    if self:IsDamagerRole(roles) then
+      roles_note = roles_note..""..INLINE_DAMAGER_ICON
+    end
+  end
+  return roles_note
 end
 
 local SetHyperlink = ItemRefTooltip.SetHyperlink
@@ -349,6 +368,7 @@ end
 function Chitchat:ShowNoteTooltip(tag)
   local personal_note = self:GetNote(tag)
   if personal_note == nil then return end
+  local encounter_timestamp = personal_note[self.ENCOUNTERS_TIMESTAMP_KEY]
   
   ShowUIPanel(ItemRefTooltip)
   if (not ItemRefTooltip:IsVisible()) then
@@ -363,6 +383,7 @@ function Chitchat:ShowNoteTooltip(tag)
   self:TooltipHaveWeMet(ItemRefTooltip,personal_note,true)
   self:TooltipEncounterDungeon(ItemRefTooltip,tag,self.WOD_DUNGEON_ZONES)
   self:TooltipEncounterRaid(ItemRefTooltip,tag, self.WOD_RAID_ZONES, {"Raid Finder","Normal","Heroic","Mythic"})
+  ItemRefTooltip:AddDoubleLine(YELLOW.."Encounters Updated at|r", date("%m/%d/%y %H:%M:%S", encounter_timestamp),1,1,1,1,1,1)
   ItemRefTooltip:Show()
   ItemRefTooltip:Show()
 end
@@ -394,13 +415,15 @@ function Chitchat:TooltipHaveWeMet(tooltip, personal_note, showExpandedTooltip)
     tooltip:AddLine(YELLOW.."Note "..WHITE..note,1,1,1,1,true)
   end
   if seen_info ~= nil then
-    tooltip:AddLine(YELLOW.."Seen "..WHITE..#seen_info)
-    tooltip:AddLine(WHITE.." "..date("%m/%d/%y %H:%M:%S", seen_info[#seen_info]))
+    local index = #seen_info-1
+    if index > 1 then
+      tooltip:AddDoubleLine(YELLOW.."Last Seen|r",date("%m/%d/%y %H:%M:%S", seen_info[#seen_info]))
+    end
   end
 end
 
 function Chitchat:TooltipEncounters(tooltip, personal_note, showExpandedTooltip)
-  local inInstance, instanceType = IsInInstance()
+  local inInstance = false --, instanceType = IsInInstance()
   local encounters = personal_note[self.ENCOUNTERS_KEY]
   local encounter_timestamp = personal_note[self.ENCOUNTERS_TIMESTAMP_KEY]
   local tag = personal_note[self.TAG_KEY]
@@ -408,6 +431,7 @@ function Chitchat:TooltipEncounters(tooltip, personal_note, showExpandedTooltip)
   if encounters == nil then
     if showExpandedTooltip then
       tooltip:AddLine(tooltipNoteFormat:format("Encounters: ","None found."),1, 1, 1, false)
+      tooltip:AddDoubleLine(YELLOW.."Encounters Updated at|r", date("%m/%d/%y %H:%M:%S", encounter_timestamp),1,1,1,1,1,1)
       return
     end
   end
@@ -422,17 +446,17 @@ function Chitchat:TooltipEncounters(tooltip, personal_note, showExpandedTooltip)
       local difficulties = { difficulty }
       if showExpandedTooltip then 
         instances = self.WOD_RAID_ZONES 
-        difficulties = { "Looking for Raid","Normal","Heroic","Mythic" }
+        difficulties = { "Raid Finder","Normal","Heroic","Mythic" }
       end
       self:TooltipEncounterRaid(tooltip, tag, instances, difficulties)
     end
   else
     if showExpandedTooltip then
       self:TooltipEncounterDungeon(tooltip, tag, self.WOD_DUNGEON_ZONES)
-      self:TooltipEncounterRaid(tooltip, tag, self.WOD_RAID_ZONES,{"Looking for Raid","Normal","Heroic","Mythic"})
+      self:TooltipEncounterRaid(tooltip, tag, self.WOD_RAID_ZONES,{"Raid Finder","Normal","Heroic","Mythic"})
+      tooltip:AddDoubleLine(YELLOW.."Encounters Updated at|r", date("%m/%d/%y %H:%M:%S", encounter_timestamp),1,1,1,1,1,1)
     end
   end
-  tooltip:AddDoubleLine(YELLOW.."Encounters Updated at|r", date("%m/%d/%y %H:%M:%S", encounter_timestamp),1,1,1,1,1,1)
 end
 -- Dungeon Name [N|H]
 function Chitchat:TooltipEncounterDungeon(tooltip, tag, instances)
