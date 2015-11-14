@@ -2,7 +2,7 @@
 ## Title : ChitChat
 ## Notes: ChitChat, your new personal message handler.
 ## Author: Renzu
-## Version: 1.0
+## Version: 2.0
 ## SavedVariables: ChitchatDB
 ## X-Category: Interface Enhancements
 
