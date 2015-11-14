@@ -1,11 +1,12 @@
 -- TODO
 --  Right-clicking on conversations and on messages.
 local selected_id = nil
+local L = LibStub("AceLocale-3.0"):GetLocale("Chitchat")
 
 function Chitchat:OnLoadFrame(frame)
   initFrame()
 	UIDropDownMenu_Initialize(ChitchatDropDown, Chitchat_InitializeLogOptionsMenu, "MENU")
-  
+
   self:RegisterMessage("CHITCHAT_MESSAGE_CREATED","DirtyLogCache")
   self:RegisterMessage("CHITCHAT_LOG_UPDATED","UpdateConversationList")
   self:RegisterMessage("CHITCHAT_NOTE_UPDATED","OnChitchatNoteUpdated")
@@ -23,36 +24,36 @@ function Chitchat_InitializeLogOptionsMenu(self, level)
   if level == 1 then
     info.checked = Chitchat:WhisperLogGet(Chitchat.menuItemID, Chitchat.FAVORITE_KEY)
     info.notCheckable = false
-    info.text = "Favorite"
+    info.text = L["MENU_FAVORITE"]
     info.value = "FAVORITE"
     info.func = OnClickDropDownItem
     UIDropDownMenu_AddButton(info)
-  
-    info.checked = Chitchat:WhisperLogGet(Chitchat.menuItemID, Chitchat.HIDE_CHAT_KEY)
-    info.notCheckable = false
-    info.text = "Silent?"
-    info.value = "QUITE_MODE"
-    info.func = OnClickDropDownItem
-    UIDropDownMenu_AddButton(info)
-    
+
+    -- info.checked = Chitchat:WhisperLogGet(Chitchat.menuItemID, Chitchat.HIDE_CHAT_KEY)
+    -- info.notCheckable = false
+    -- info.text = "Silent?"
+    -- info.value = "QUITE_MODE"
+    -- info.func = OnClickDropDownItem
+    -- UIDropDownMenu_AddButton(info)
+
     info.notCheckable = true
-    
-    info.text = "Have We Met?"
-    info.value = "HAVE_WE_MET"
-    info.func = OnClickDropDownItem
-    UIDropDownMenu_AddButton(info)
-   
-    info.text = "Delete Log"
+
+    -- info.text = "Have We Met?"
+    -- info.value = "HAVE_WE_MET"
+    -- info.func = OnClickDropDownItem
+    -- UIDropDownMenu_AddButton(info)
+
+    info.text = L["MENU_DELETE_LOG"]
     info.value = "DELETE_LOG"
     info.func = OnClickDropDownItem
     UIDropDownMenu_AddButton(info)
-    
-    info.text = "Delete Messages"
+
+    info.text = L["MENU_DELETE_MESSAGES"]
     info.value = "DELETE_MESSAGES"
     info.func = OnClickDropDownItem
     UIDropDownMenu_AddButton(info)
-    
-    info.text = "Cancel"
+
+    info.text = L["MENU_CANCEL"]
     info.value = "CANCEL"
     info.func = OnClickDropDownItem
     UIDropDownMenu_AddButton(info)
@@ -83,6 +84,8 @@ end
 function Chitchat:OnShowFrame(frame)
   PlaySound("igCharacterInfoOpen")
   ChitchatFrameScrollBar:Show()
+  ChitchatMessageScrollBar:Show()
+  Chitchat.db.profile.missed = 0
 end
 
 -- Called when any frame under parent frame is hidden.
@@ -104,7 +107,7 @@ function Chitchat:OnClickEntry(self, button, down)
   end
 end
 
-function Chitchat:ShowEntryDropDown(itemID, anchorTo, offsetX, offsetY)	
+function Chitchat:ShowEntryDropDown(itemID, anchorTo, offsetX, offsetY)
 	Chitchat.menuItemID = itemID;
 	ToggleDropDownMenu(1, nil, ChitchatDropDown, anchorTo, offsetX, offsetY);
 end
@@ -116,8 +119,51 @@ function Chitchat:HideEntryDropdown()
 	end
 end
 
+function Chitchat_OnMessageScrollUpdate()
+  Chitchat:OnMessageScrollUpdate()
+end
+
+function Chitchat:OnMessageScrollUpdate()
+  local offset = FauxScrollFrame_GetOffset(ChitchatMessageScrollBar)
+  ChitchatMessageFrame:SetScrollOffset(offset)
+end
+
+function Chitchat:UpdateMessageLog(log_tag)
+  ChitchatMessageFrame:Clear();
+  local whisper = nil
+  local currentDate
+  local currentTime
+  local message
+  local color
+  local conversation = self:GetLog(log_tag)
+  local count = 0
+  if conversation ~= nil and conversation[self.MESSAGES_KEY] ~= nil then
+    conversation[self.UNREAD_KEY] = 0
+    for index, value in ipairs(conversation[self.MESSAGES_KEY]) do
+      whisper = Chitchat:GetMessage(tostring(value))
+      if whisper ~= nil then
+        if whisper[self.INCOMING_KEY] == 1 then
+          color = "ffDA81F5"
+        else
+          color = "ffffffff"
+        end
+        currentDate = FormatDate(whisper[self.TIMESTAMP_KEY])
+        currentTime = FormatTime(whisper[self.TIMESTAMP_KEY])
+        message = "|cFFA9A9A9["..currentDate.."]["..currentTime.."]|r|c"..color.."["..whisper[self.SENDER_KEY].."]: "..whisper[self.MESSAGE_KEY].."|r"
+        ChitchatMessageFrame:AddMessage(message)
+        if count < 1025 then
+          count = index
+        end
+      end
+
+    end
+  end
+  FauxScrollFrame_Update(ChitchatMessageScrollBar,count,21,46)
+end
+
 function Chitchat:ShowWhispers(log_tag)
-  ChitchatNote:SetFont("Fonts\\FRIZQT__.TTF", 12)
+  Chitchat:UpdateMessageLog(log_tag)
+  --ChitchatNote:SetFont("Fonts\\FRIZQT__.TTF", 12)
   local text = "<html><body>"
   local message = ""
   local whisper = nil
@@ -154,7 +200,7 @@ function Chitchat:ShowWhispers(log_tag)
       end
     end
   end
-  ChitchatNote:SetText(text.."<br/><br/></body></html>")
+  --ChitchatNote:SetText(text.."<br/><br/></body></html>")
 end
 
 function FormatTimestamp(timestamp)
@@ -217,13 +263,13 @@ function Chitchat:OnScrollUpdate()
           end
         end
       end
-      
+
       if conversation[self.FAVORITE_KEY] then
         button.favorite:Show()
       else
         button.favorite:Hide()
       end
-      
+
       if conversation[self.UNREAD_KEY] ~= nil and conversation[self.UNREAD_KEY] > 0 then
         button.unreadBG:Show()
         button.unread:SetText(conversation[self.UNREAD_KEY])
@@ -231,7 +277,7 @@ function Chitchat:OnScrollUpdate()
         button.unreadBG:Hide()
         button.unread:SetText('')
       end
-      
+
       if class_texture then
         button.classIcon:Show()
         button.classIcon:SetTexture("Interface\\TargetingFrame\\UI-Classes-Circles")
@@ -345,7 +391,7 @@ end
 -------------------------------------------------------------------------------
 
 function Chitchat:OnChitchatNoteUpdated(self, tag)
-  
+
   Chitchat.cachedNotesDirty = true
   if HaveWeMetFrame:IsShown() then
     Chitchat:HaveWeMetFrameListUpdate()
@@ -371,12 +417,12 @@ function Chitchat_InitializeHaveWeMetMenu(self, level)
   local info = UIDropDownMenu_CreateInfo()
   if level == 1 then
     info.notCheckable = true
-    
+
     info.text = "Delete Note"
     info.value = "DELETE_NOTE"
     info.func = OnClickDropDownItem
     UIDropDownMenu_AddButton(info)
-    
+
     info.text = "Cancel"
     info.value = "CANCEL"
     info.func = OnClickDropDownItem
@@ -407,15 +453,15 @@ function Chitchat:HaveWeMetFrameListUpdate()
   local offset = HybridScrollFrame_GetOffset(scrollFrame)
   local buttons = scrollFrame.buttons
   local numButtons = #buttons
-  
+
   HaveWeMetFrame.noteCount:SetText(numItems.." Notes")
-  
+
   if numItems == 0 then
     HaveWeMetFrame.List.EmptyNotesText:SetText("No Notes Found")
   else
     HaveWeMetFrame.List.EmptyNotesText:SetText(nil)
   end
-  
+
   for i = 1, numButtons do
     local button = buttons[i]
 		local index = offset + i -- adjust index
@@ -435,7 +481,7 @@ function Chitchat:HaveWeMetFrameListUpdate()
       else
         button.ClassIcon:Hide()
       end
-      
+
       if self:IsTankRole(personal_note[self.ROLE_KEY]) then
         button.TankIcon:SetAlpha(1.0)
       else
@@ -451,7 +497,7 @@ function Chitchat:HaveWeMetFrameListUpdate()
       else
         button.DamagerIcon:SetAlpha(0.25)
       end
-      
+
       if type(rating) == "number" and rating > 0 then
         if rating > 7 then
           button.Rating:SetTextColor(0.0,1.0,0.0)
@@ -467,7 +513,7 @@ function Chitchat:HaveWeMetFrameListUpdate()
       end
       button.PlayerTag:SetText(personal_note[self.TAG_KEY])
       button.Note:SetText(personal_note[self.NOTE_KEY])
-      
+
       button:Show()
     else
       button:Hide()
@@ -476,7 +522,7 @@ function Chitchat:HaveWeMetFrameListUpdate()
   local totalHeight = numItems * scrollFrame.buttonHeight;
 	local displayedHeight = numButtons * scrollFrame.buttonHeight;
 	HybridScrollFrame_Update(scrollFrame, totalHeight, displayedHeight);
-	
+
 end
 
 Chitchat.cachedNotes = {}
@@ -532,7 +578,7 @@ function Chitchat:PersonalNoteFrameOnLoad(frame)
   getglobal(ratingFrameName..'Low'):SetText('Unrated')
   getglobal(ratingFrameName..'High'):SetText('10')
   getglobal(ratingFrameName..'Text'):SetText('Rating:')
-  
+
   local class_texture = CLASS_ICON_TCOORDS["PRIEST"]
   frame.ClassIcon:Show()
   frame.ClassIcon:SetAlpha(0.75)
@@ -597,7 +643,7 @@ function Chitchat:PersonalNoteFrameSetClassIcon(frame, className)
 end
 
 function Chitchat:PersonalNoteFrameSetRoles(frame, roleNumber)
-  
+
   if self:IsTankRole(roleNumber) then
     frame.TankIcon:SetAlpha(1.0)
   else

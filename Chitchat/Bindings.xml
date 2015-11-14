@@ -1,0 +1,12 @@
+<!--
+
+(C) Copyright 2010 Ryknzu (Ryknzu@gmail.com)
+
+-->
+<Bindings>
+	<Binding
+		name="CHITCHAT"
+		header="CHITCHAT">
+		Chitchat:ToggleFrame()
+	</Binding>
+</Bindings>

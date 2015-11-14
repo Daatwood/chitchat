@@ -15,7 +15,7 @@
     <Layers>
       <Layer level="BACKGROUND">
         <Texture file="Interface\PetBattles\PetJournal">
-          <TexCoords left="0.49804688" right="0.90625000" top="0.12792969" bottom="0.17285156"/>  
+          <TexCoords left="0.49804688" right="0.90625000" top="0.12792969" bottom="0.17285156"/>
         </Texture>
       </Layer>
       <Layer level="BORDER">
@@ -176,13 +176,13 @@
       <OnLoad>Chitchat:OnLoadHaveWeMetFrame(self)</OnLoad>
     </Scripts>
   </Frame>
-  
+
 	<Button name="HaveWeMetPersonalNoteTemplate" virtual="true">
 		<Size x="658" y="47"/>
 		<Layers>
       <Layer level="BACKGROUND">
         <Texture file="Interface\PetBattles\PetJournal">
-          <TexCoords left="0.49804688" right="0.90625000" top="0.12792969" bottom="0.17285156"/>  
+          <TexCoords left="0.49804688" right="0.90625000" top="0.12792969" bottom="0.17285156"/>
         </Texture>
       </Layer>
 			<Layer level="ARTWORK">
@@ -215,7 +215,7 @@
 					<Anchors>
 						<Anchor point="TOPLEFT" x="480" y="-8"/>
 					</Anchors>
-				</FontString>        
+				</FontString>
         <!-- CHANGE TO TANK ICON -->
         <Texture parentKey="TankIcon" file="Interface\LFGFrame\UI-LFG-ICON-ROLES" setAllPoints="false" alpha="0.25">
           <Size x="40" y="40"/>
@@ -248,12 +248,12 @@
 			<OnClick>Chitchat:OnClickHaveWeMetEntry(self,button,down)</OnClick>
 		</Scripts>
 	</Button>
-  
+
   <!-- Answering Machine frame -->
   <Frame name="ChitchatParent" toplevel="true" movable="true" parent="UIParent" enableMouse="true" hidden="true">
-    <Size> 
-      <AbsDimension x="708" y="606"/> 
-    </Size> 
+    <Size>
+      <AbsDimension x="708" y="606"/>
+    </Size>
     <Anchors>
       <Anchor point="TOPLEFT">
         <AbsDimension x="0" y="-104" />
@@ -272,11 +272,20 @@
     </Backdrop>
     <Frames>
       <Button parentKey="CloseButton" inherits="UIPanelCloseButton">
-				<Anchors>
-					<Anchor point="TOPRIGHT" x="-10" y="-10"/>
-				</Anchors>
-			</Button>
-      <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Conversations">
+		<Anchors>
+		  <Anchor point="TOPRIGHT" x="-10" y="-10"/>
+		</Anchors>
+	  </Button>
+      <Button parentKey="SaveButton" inherits="OptionsButtonTemplate" text="Settings">
+        <Anchors>
+            <Anchor point="BOTTOMLEFT" relativeKey="$parent" relativePoint="BOTTOMLEFT" x="10" y="10"/>
+        </Anchors>
+        <Scripts>
+          <OnLoad>self:RegisterForClicks("LeftButtonUp")</OnLoad>
+          <OnClick>InterfaceOptionsFrame_OpenToCategory("Chitchat")</OnClick>
+        </Scripts>
+      </Button>
+      <!-- <Button name="$parentTab1" inherits="CharacterFrameTabButtonTemplate" id="1" text="Conversations">
         <Anchors>
           <Anchor point="TOPLEFT" relativeKey="$parent" relativePoint="BOTTOMLEFT" x="11" y="6"/>
         </Anchors>
@@ -288,8 +297,8 @@
             HaveWeMetFrame:Hide();
           </OnClick>
         </Scripts>
-      </Button>
-      <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="HaveWeMet">
+      </Button> -->
+      <!-- <Button name="$parentTab2" inherits="CharacterFrameTabButtonTemplate" id="2" text="HaveWeMet">
         <Anchors>
           <Anchor point="LEFT" relativeTo="$parentTab1" relativePoint="RIGHT" x="-16" y="0"/>
         </Anchors>
@@ -301,7 +310,7 @@
             HaveWeMetFrame:Show();
           </OnClick>
         </Scripts>
-      </Button>
+      </Button> -->
       <Frame name="ChitchatFrame" hidden="false">
         <Anchors>
           <Anchor point="TOPLEFT"/>
@@ -324,14 +333,14 @@
               <Anchor point="BOTTOMLEFT" x="4" y="46" />
             </Anchors>
           </Frame>
-      
+
           <Frame parentKey="RightInset" useParentLevel="true" inherits="InsetFrameTemplate">
             <Anchors>
               <Anchor point="TOPRIGHT" x="-30" y="-60" />
               <Anchor point="BOTTOMLEFT" relativeKey="$parent.LeftInset" relativePoint="BOTTOMRIGHT" x="20" y="0"/>
             </Anchors>
           </Frame>
-          
+
           <EditBox name="$parentSearchBox" inherits="SearchBoxTemplate" parentKey="searchBox" letters="40">
             <Size x="237" y="20"/>
             <Anchors>
@@ -343,7 +352,7 @@
               </OnTextChanged>
             </Scripts>
           </EditBox>
-    
+
           <ScrollFrame name="ChitchatFrameScrollBar" inherits="FauxScrollFrameTemplate" hidden="true">
             <Anchors>
               <!-- Controls frame entry position -->
@@ -361,25 +370,37 @@
             </Scripts>
           </ScrollFrame>
 
-          <ScrollFrame name="ChitchatNoteScrollFrame" inherits="UIPanelScrollFrameTemplate">
+          <ScrollingMessageFrame name="ChitchatMessageFrame" insertMode="BOTTOM" maxLines="1024" fade="false">
+            <Size x="688" y="304"/>
             <Anchors>
               <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="4" y="0"/>
               <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="0"/>
             </Anchors>
-            <ScrollChild>
-              <SimpleHTML name="ChitchatNote" >
-                <Size>
-                  <AbsDimension x="378" y="10"/>
-                </Size>
-                <Scripts>
-                  <OnLoad>self:SetHyperlinksEnabled(true)</OnLoad>
-                  <!--OnHyperlinkClick>ChatFrame_OnHyperlinkShow(self, link, text, button)</OnHyperlinkClick-->
-                </Scripts>
-                <FontString inherits="GameFontHighlightSmall" /> 
-                <FontStringHeader1 inherits="ChitchatFontHeader"/>
-              </SimpleHTML>
-            </ScrollChild>
+            <Scripts>
+              <OnHyperlinkClick>
+                SetItemRef(link, text, button);
+              </OnHyperlinkClick>
+            </Scripts>
+            <FontString inherits="ChatFontNormal" justifyH="LEFT"/>
+          </ScrollingMessageFrame>
+
+          <ScrollFrame name="ChitchatMessageScrollBar" inherits="FauxScrollFrameTemplate" hidden="true">
+            <Anchors>
+              <!-- Controls frame entry position -->
+              <Anchor point="TOPLEFT" relativeKey="$parent.RightInset" x="0" y="0"/>
+              <!-- Controls frame scrollbar position -->
+              <Anchor point="BOTTOMRIGHT" relativeKey="$parent.RightInset" x="-4" y="0"/>
+            </Anchors>
+            <Scripts>
+              <OnVerticalScroll>
+                FauxScrollFrame_OnVerticalScroll(self, offset, 46, Chitchat_OnMessageScrollUpdate);
+              </OnVerticalScroll>
+              <OnShow>
+                Chitchat_OnMessageScrollUpdate()
+              </OnShow>
+            </Scripts>
           </ScrollFrame>
+
           <EditBox name="ChitchatNoteEditBox" letters="255" inherits="InputBoxTemplate" autoFocus="false">
             <Size x="380" y="20"/>
             <Anchors>
@@ -464,7 +485,7 @@
       </Frame>
       <Frame name="HaveWeMetFrame" inherits="HaveWeMetFrameTemplate" hidden="true"></Frame>
     </Frames>
-    
+
     <Layers>
       <Layer level="ARTWORK">
         <Texture name="ChitchatHeader" file="Interface\DialogFrame\UI-DialogBox-Header">
@@ -492,8 +513,8 @@
     </Layers>
     <Scripts>
       <OnLoad>
-        PanelTemplates_SetNumTabs(self,2);
-        PanelTemplates_SetTab(self, 1);
+        <!-- PanelTemplates_SetNumTabs(self,2);
+        PanelTemplates_SetTab(self, 1); -->
         Chitchat:OnLoadFrame(self)
         tinsert(UISpecialFrames, self:GetName());
       </OnLoad>
@@ -515,9 +536,9 @@
    </Frame>
 
   <Frame name="HaveWeMetNoteFrame" toplevel="true" movable="true" parent="UIParent" enableMouse="true" frameStrata="DIALOG" hidden="true">
-    <Size> 
-      <AbsDimension x="400" y="400"/> 
-    </Size> 
+    <Size>
+      <AbsDimension x="400" y="400"/>
+    </Size>
     <Anchors>
       <Anchor point="CENTER"/>
     </Anchors>
