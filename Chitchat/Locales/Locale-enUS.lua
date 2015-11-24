@@ -58,6 +58,7 @@ L["OPT_CHANNEL_GUILD"] = "Record Guild Chat"
 L["OPT_CHANNEL_OFFICER"] = "Record Officer Chat"
 L["OPT_HEADER_OTHER"] = "Other"
 L["OPT_FIX_CAPSLOCK"] = "Fix Capslock"
+L["OPT_ALERT"] = "New whispers as Raid Warnings"
 -- Settings
 L["SETTING_AUTO_RESPOND"] = "Currently unavailable, will respond when able."
 -- Unread Whisper Messages

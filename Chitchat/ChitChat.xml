@@ -4,6 +4,4 @@
     <Script  file="MessageEntry.lua"/>
     <Script  file="PersonalNote.lua"/>
     <Script  file="WhisperLog.lua"/>
-    <Script  file="HaveWeMet.lua"/>
-    <Script  file="BossEncounter.lua"/>
 </Ui>

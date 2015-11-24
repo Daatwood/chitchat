@@ -8,6 +8,7 @@ version
 .wow_Version
 .build_path
 .commit
+.DS_Store
 
 ### Lua ###
 # Compiled Lua sources
