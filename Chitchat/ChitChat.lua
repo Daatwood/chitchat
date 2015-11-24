@@ -493,7 +493,6 @@ function Chitchat:FakeWhisper(incoming)
   local tag = "Prototype"..rnd.."-"..GetRealmName()
   local message = strsub(TEST_STRING,0,math.random(11, strlen(TEST_STRING)))
   Chitchat:HandleWhisper(tag, message, time(), incoming)
-  Chitchat:UpdatePersonalNote(tag,"Test Message, Please Ignore.",math.random(0,10),"TANK","DEATHKNIGHT")
 end
 function Chitchat:OnEventChannelChatMessage(self, message, sender, lang, channelString, target, flags, arg7, channelNumber, channelName, arg10, counter, guid)
   local record = false
