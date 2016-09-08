@@ -174,10 +174,3 @@ end
 function Chitchat:ToggleFixCapslock(info, value)
   self.db.profile.other.fixCapslock = value
 end
-
-function Chitchat:AlertIncoming(info)
-  return self.db.profile.recording.alert
-end
-function Chitchat:ToggleAlertIncoming(info, value)
-  self.db.profile.recording.alert = value
-end

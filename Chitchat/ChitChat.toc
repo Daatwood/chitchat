@@ -1,7 +1,7 @@
-## Interface: 60200
+## Interface: 70000
 ## Title : ChitChat
 ## Notes: ChitChat, your new personal message handler.
-## Author: Renzu
+## Author: Renzu of US-Crushridge
 ## Version: 2.1
 ## SavedVariables: ChitchatDB
 ## X-Category: Interface Enhancements

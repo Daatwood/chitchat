@@ -33,7 +33,7 @@ L["VIEW_MSG"] = "Click to View."
 L["OPT_ADDON_TITLE"] = "Chitchat"
 L["OPT_ADDON_DESC"] = format("Chitchat is an add-on that works as an in-game answering machine by |cff0080FFRenzu of US-Crushridge|r.\nVersion: %s",GetAddOnMetadata("Chitchat", "Version"))
 L["OPT_HEADER_GENERAL"] = "General"
-L["OPT_MINIMAP"] = "Toggle Minimap Icon"
+L["OPT_MINIMAP"] = "Hide Minimap Icon"
 L["OPT_MINIMAP_DESC"] = "Toggles the minimap icon."
 L["OPT_TOGGLE"] = "Toggle Interface"
 L["OPT_TOGGLE_DESC"] = "Toggles Chitchat interface window."
@@ -58,7 +58,6 @@ L["OPT_CHANNEL_GUILD"] = "Record Guild Chat"
 L["OPT_CHANNEL_OFFICER"] = "Record Officer Chat"
 L["OPT_HEADER_OTHER"] = "Other"
 L["OPT_FIX_CAPSLOCK"] = "Fix Capslock"
-L["OPT_ALERT"] = "New whispers as Raid Warnings"
 -- Settings
 L["SETTING_AUTO_RESPOND"] = "Currently unavailable, will respond when able."
 -- Unread Whisper Messages
